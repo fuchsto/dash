@@ -600,7 +600,7 @@ dart_ret_t dart__base__locality__domain__create_subdomains(
       domain->num_units   = domain->parent->num_units /
                             domain->parent->num_domains;
       for (int u = 0; u < domain->num_units; u++) {
-        int unit_idx = domain->num_units * domain->relative_index;
+        int unit_idx = (domain->num_units * domain->relative_index) + u;
         domain->unit_ids[u] = domain->parent->unit_ids[unit_idx];
       }
       /* domain and its two parent domains are in cache scope, switch
@@ -771,7 +771,7 @@ dart_ret_t dart__base__locality__domain__create_global_subdomain(
   subdomain->node_id              = rel_idx;
   subdomain->num_nodes            = 1;
   subdomain->num_units            = num_node_units;
-  subdomain->hwinfo.shared_mem_kb = subdomain->hwinfo.numa_memory * 1024;
+  subdomain->hwinfo.shared_mem_kb = subdomain->hwinfo.system_memory * 1024;
   if (subdomain->num_units > 0) {
     subdomain->unit_ids = malloc(subdomain->num_units *
                                  sizeof(dart_unit_t));
@@ -970,6 +970,7 @@ dart_ret_t dart__base__locality__domain__create_numa_subdomain(
   /* Loop splits into UMA segments within a NUMA domain or module.
    */
   dart__unused(host_topology);
+  dart__unused(unit_mapping);
 
   DART_LOG_TRACE("dart__base__locality__domain__create_subdomains: "
                  "== SPLIT NUMA ==");
@@ -1017,7 +1018,8 @@ dart_ret_t dart__base__locality__domain__create_numa_subdomain(
   subdomain->hwinfo.num_cores   = num_uma_cores;
 
   if (subdomain->num_units > 0) {
-    subdomain->unit_ids = malloc(subdomain->num_units * sizeof(dart_unit_t));
+    subdomain->unit_ids = malloc(subdomain->num_units *
+                                 sizeof(dart_unit_t));
   } else {
     subdomain->unit_ids = NULL;
   }
@@ -1060,7 +1062,8 @@ dart_ret_t dart__base__locality__domain__create_package_subdomain(
   subdomain->hwinfo.num_cores   = num_cachedom_cores;
 
   if (subdomain->num_units > 0) {
-    subdomain->unit_ids = malloc(subdomain->num_units * sizeof(dart_unit_t));
+    subdomain->unit_ids = malloc(subdomain->num_units *
+                                 sizeof(dart_unit_t));
   } else {
     subdomain->unit_ids = NULL;
   }
@@ -1150,17 +1153,18 @@ dart_ret_t dart__base__locality__domain__create_cache_subdomain(
   }
 
   if (subdomain->num_units > 0) {
-    subdomain->unit_ids = malloc(subdomain->num_units * sizeof(dart_unit_t));
+    subdomain->unit_ids = malloc(subdomain->num_units *
+                                 sizeof(dart_unit_t));
   } else {
     subdomain->unit_ids = NULL;
   }
   for (int u = 0; u < subdomain->num_units; ++u) {
     int unit_idx           = (rel_idx * num_cachedom_units) + u;
     dart_unit_t unit_id    = cache_domain->unit_ids[unit_idx];
+    subdomain->unit_ids[u] = unit_id;
+    subdomain->num_domains = subdomain->num_units;
 
-    if (cache_level == 0) {
-      subdomain->unit_ids[u] = unit_id;
-      subdomain->num_domains = subdomain->num_units;
+    if (subdomain->scope == DART_LOCALITY_SCOPE_CORE) { //cache_level == 0) {
       /* set host and domain tag of unit in unit locality map: */
       dart_unit_locality_t * unit_loc;
       DART_ASSERT_RETURNS(

@@ -18,13 +18,13 @@ LocalityJSONPrinter & LocalityJSONPrinter::operator<<(
 {
   std::ostringstream os;
   os << "'unit_pinning' : {"
-     << "'unit': "         << upi.unit         << ", "
-     << "'host': '"        << upi.host         << "', "
-     << "'domain': "       << upi.domain       << ", "
-     << "'numa_id': "      << upi.numa_id      << ", "
-     << "'cpu_id': "       << upi.cpu_id       << ", "
-     << "'num_cores': "    << upi.num_cores    << ", "
-     << "'num_threads': "  << upi.num_threads  << " }";
+     << "'unit':"         << upi.unit         << ", "
+     << "'host':'"        << upi.host         << "', "
+     << "'domain':"       << upi.domain       << ", "
+     << "'numa_id':"      << upi.numa_id      << ", "
+     << "'cpu_id':"       << upi.cpu_id       << ", "
+     << "'num_cores':"    << upi.num_cores    << ", "
+     << "'num_threads':"  << upi.num_threads  << " }";
   return (*this << os.str());
 }
 
@@ -33,26 +33,23 @@ LocalityJSONPrinter & LocalityJSONPrinter::operator<<(
 {
   std::ostringstream os;
   os << "{ "
-     << "'numa_id': "       << hwinfo.numa_id        << ", "
-     << "'num_numa': "      << hwinfo.num_numa       << ", "
-     << "'num_cores': "     << hwinfo.num_cores      << ", "
-     << "'cpu_id': "        << hwinfo.cpu_id         << ", "
-     << "'threads':{ "
-     << "'min': "           << hwinfo.min_threads    << ", "
-     << "'max': "           << hwinfo.max_threads    << " }, "
-     << "'cpu_mhz': { "
-     << "'min': "           << hwinfo.min_cpu_mhz    << ","
-     << "'max': "           << hwinfo.max_cpu_mhz    << " }, "
-     << "'cache_sizes': [ " << hwinfo.cache_sizes[0] << ","
-                            << hwinfo.cache_sizes[1] << ","
-                            << hwinfo.cache_sizes[2] << " ], "
-     << "'cache_ids': [ "   << hwinfo.cache_ids[0]   << ","
-                            << hwinfo.cache_ids[1]   << ","
-                            << hwinfo.cache_ids[2]   << " ], "
-     << "'mem_mbps': "      << hwinfo.max_shmem_mbps << ", "
-     << "'shared_mem_kb': " << hwinfo.shared_mem_kb  << ", "
-     << "'system_mb': "     << hwinfo.system_memory  << ", "
-     << "'numa_mb': "       << hwinfo.numa_memory
+     << "'numa_id':"       << hwinfo.numa_id        << ", "
+     << "'num_cores':"     << hwinfo.num_cores      << ", "
+     << "'cpu_id':"        << hwinfo.cpu_id         << ", "
+     << "'threads':{"
+     << "'min':"           << hwinfo.min_threads    << ", "
+     << "'max':"           << hwinfo.max_threads    << "}, "
+     << "'cpu_mhz':{"
+     << "'min':"           << hwinfo.min_cpu_mhz    << ","
+     << "'max':"           << hwinfo.max_cpu_mhz    << "}, "
+     << "'cache_sizes':["  << hwinfo.cache_sizes[0] << ","
+                           << hwinfo.cache_sizes[1] << ","
+                           << hwinfo.cache_sizes[2] << "], "
+     << "'cache_ids':["    << hwinfo.cache_ids[0]   << ","
+                           << hwinfo.cache_ids[1]   << ","
+                           << hwinfo.cache_ids[2]   << "], "
+     << "'mem_mbps':"      << hwinfo.max_shmem_mbps << ", "
+     << "'shared_mem_kb':" << hwinfo.shared_mem_kb
      << " }";
   return (*this << os.str());
 }
@@ -131,24 +128,24 @@ LocalityJSONPrinter & LocalityJSONPrinter::print_domain(
       dart_unit_locality(team, unit_id, &uloc);
       dart_team_unit_l2g(uloc->team, unit_id, &unit_gid);
       *this << indent << "'unit_id'  : { "
-                      << "'local_id': "  << uloc->unit << ", "
-                      << "'team': "      << uloc->team << ", "
-                      << "'global_id': " << unit_gid
-                      << " }, \n"
+                      << "'local_id':"  << uloc->unit << ", "
+                      << "'team':"      << uloc->team << ", "
+                      << "'global_id':" << unit_gid
+                      << " },\n"
             << indent << "'unit_loc' : { "
-                      << "'domain': '"   << uloc->domain_tag << "', "
-                      << "'host': '"     << uloc->host       << "', "
-                      << "'hwinfo': "    << uloc->hwinfo
+                      << "'domain':'"   << uloc->domain_tag << "', "
+                      << "'host':'"     << uloc->host       << "', "
+                      << "'hwinfo':"    << uloc->hwinfo
                       << " }";
     }
   } else {
-    *this << indent << "'hwinfo': " << domain->hwinfo << " ";
+    *this << indent << "'hwinfo'   : " << domain->hwinfo << " ";
   }
 
   if (domain->num_domains > 0) {
     *this << ",\n";
-    *this << indent << "'ndomains': " << domain->num_domains << ",\n";
-    *this << indent << "'domains': {\n";
+    *this << indent << "'ndomains' : " << domain->num_domains << ",\n";
+    *this << indent << "'domains'  : {\n";
 
     for (int d = 0; d < domain->num_domains; ++d) {
       if (static_cast<int>(domain->domains[d].scope) <=
