@@ -558,8 +558,8 @@ dart_ret_t dart__base__locality__domain_group(
 
     /* TODO: Check if this implementation is correct.
              Incrementing an existing domain's relative index could result
-             in naming collisions as the relative index of the subdomain can
-             differ from the last place in their domain tag.
+             in naming collisions as the relative index of the subdomain
+             can differ from the last place in their domain tag.
     */
     int group_domain_tag_len =
       sprintf(group_domain->domain_tag + group_parent_domain_tag_len,

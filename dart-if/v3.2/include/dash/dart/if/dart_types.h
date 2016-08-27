@@ -127,6 +127,9 @@ typedef enum
   /** Locality at processor uncore (system agent) level. Intel only.
    *  Cannot be referenced by DART directly. */
   DART_LOCALITY_SCOPE_UNCORE     =  510,
+  /** Locality at level of physical CPU cache. Cannot be referenced by
+   *  DART directly. */
+  DART_LOCALITY_SCOPE_CACHE      =  530,
   /** Locality at physical processing core level. Cannot be referenced
    *  by DART directly. */
   DART_LOCALITY_SCOPE_CORE       =  550,
@@ -171,6 +174,9 @@ typedef struct
   int   cache_line_sizes[3];
   /** Flags indicating shared caches by cache level (L1, L2, L3). */
   int   cache_shared[3];
+
+  /** IDs of cache modules by level (L1, L2, L3), unique within domain. */
+  int   cache_ids[3];
 
   /** Minimum number of CPU threads per core. */
   int   min_threads;

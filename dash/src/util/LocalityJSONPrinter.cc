@@ -33,20 +33,26 @@ LocalityJSONPrinter & LocalityJSONPrinter::operator<<(
 {
   std::ostringstream os;
   os << "{ "
-     << "'numa_id': "     << hwinfo.numa_id        << ", "
-     << "'num_numa': "    << hwinfo.num_numa       << ", "
-     << "'num_sockets': " << hwinfo.num_sockets    << ", "
-     << "'num_cores': "   << hwinfo.num_cores      << ", "
-     << "'cpu_id': "      << hwinfo.cpu_id         << ", "
+     << "'numa_id': "       << hwinfo.numa_id        << ", "
+     << "'num_numa': "      << hwinfo.num_numa       << ", "
+     << "'num_sockets': "   << hwinfo.num_sockets    << ", "
+     << "'num_cores': "     << hwinfo.num_cores      << ", "
+     << "'cpu_id': "        << hwinfo.cpu_id         << ", "
      << "'threads':{ "
-     << "'min': "         << hwinfo.min_threads    << ", "
-     << "'max': "         << hwinfo.max_threads    << " }, "
+     << "'min': "           << hwinfo.min_threads    << ", "
+     << "'max': "           << hwinfo.max_threads    << " }, "
      << "'cpu_mhz': { "
-     << "'min': "         << hwinfo.min_cpu_mhz    << ","
-     << "'max': "         << hwinfo.max_cpu_mhz    << " }, "
-     << "'mem_mbps': "    << hwinfo.max_shmem_mbps << ", "
-     << "'system_mb': "   << hwinfo.system_memory  << ", "
-     << "'numa_mb': "     << hwinfo.numa_memory
+     << "'min': "           << hwinfo.min_cpu_mhz    << ","
+     << "'max': "           << hwinfo.max_cpu_mhz    << " }, "
+     << "'cache_sizes': [ " << hwinfo.cache_sizes[0] << ","
+                            << hwinfo.cache_sizes[1] << ","
+                            << hwinfo.cache_sizes[2] << " ], "
+     << "'cache_ids': [ "   << hwinfo.cache_ids[0]   << ","
+                            << hwinfo.cache_ids[1]   << ","
+                            << hwinfo.cache_ids[2]   << " ], "
+     << "'mem_mbps': "      << hwinfo.max_shmem_mbps << ", "
+     << "'system_mb': "     << hwinfo.system_memory  << ", "
+     << "'numa_mb': "       << hwinfo.numa_memory
      << " }";
   return (*this << os.str());
 }

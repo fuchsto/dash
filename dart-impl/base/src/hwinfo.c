@@ -85,6 +85,9 @@ dart_ret_t dart_hwinfo(
   hw.max_cpu_mhz         = -1;
   hw.min_threads         = -1;
   hw.max_threads         = -1;
+  hw.cache_ids[0]        = -1;
+  hw.cache_ids[1]        = -1;
+  hw.cache_ids[2]        = -1;
   hw.cache_sizes[0]      = -1;
   hw.cache_sizes[1]      = -1;
   hw.cache_sizes[2]      = -1;
@@ -111,6 +114,16 @@ dart_ret_t dart_hwinfo(
      *       instead: */
     hw.max_shmem_mbps = 1235;
   }
+
+#ifdef DART__PLATFORM__LINUX
+  if (hw.cpu_id < 0) {
+    hw.cpu_id = sched_getcpu();
+  }
+#else
+  DART_LOG_ERROR("dart_hwinfo: "
+                 "Linux platform required");
+  return DART_ERR_OTHER;
+#endif
 
 #ifdef DART_ENABLE_LIKWID
   DART_LOG_TRACE("dart_hwinfo: using likwid");
@@ -154,12 +167,13 @@ dart_ret_t dart_hwinfo(
   // Resolve cache sizes, ordered by locality (i.e. smallest first):
   int level = 0;
   hwloc_obj_t obj;
-  for (obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_PU, 0);
+  for (obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_PU, hw.cpu_id);
        obj;
        obj = obj->parent) {
     if (obj->type == HWLOC_OBJ_CACHE) {
       hw.cache_sizes[level]      = obj->attr->cache.size;
       hw.cache_line_sizes[level] = obj->attr->cache.linesize;
+      hw.cache_ids[level]        = obj->logical_index; // or: os_index
       ++level;
     }
   }
@@ -289,16 +303,6 @@ dart_ret_t dart_hwinfo(
     }
   }
 
-#endif
-
-#ifdef DART__PLATFORM__LINUX
-  if (hw.cpu_id < 0) {
-    hw.cpu_id = sched_getcpu();
-  }
-#else
-  DART_LOG_ERROR("dart_hwinfo: "
-                 "Linux platform required");
-  return DART_ERR_OTHER;
 #endif
 
 #ifdef DART_ENABLE_NUMA
