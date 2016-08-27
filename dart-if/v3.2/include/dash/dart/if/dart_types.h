@@ -140,8 +140,8 @@ typedef enum
 dart_locality_scope_t;
 
 #define DART_LOCALITY_HOST_MAX_SIZE       ((int)(30))
-#define DART_LOCALITY_DOMAIN_TAG_MAX_SIZE ((int)(16))
-#define DART_LOCALITY_UNIT_MAX_CPUS       ((int)(8))
+#define DART_LOCALITY_DOMAIN_TAG_MAX_SIZE ((int)(32))
+#define DART_LOCALITY_UNIT_MAX_CPUS       ((int)(64))
 #define DART_LOCALITY_MAX_NUMA_ID         ((int)(16))
 
 /**

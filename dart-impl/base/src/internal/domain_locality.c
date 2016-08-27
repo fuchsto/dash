@@ -586,10 +586,14 @@ dart_ret_t dart__base__locality__domain__create_subdomains(
     case DART_LOCALITY_SCOPE_NUMA:
       domain->num_domains = 1; // TODO
       sub_scope           = DART_LOCALITY_SCOPE_PACKAGE;
+      domain->hwinfo.cpu_id = 10000 + domain->num_domains * 100 +
+                              domain->num_units;
       break;
     case DART_LOCALITY_SCOPE_PACKAGE:
       domain->num_domains = 1; // TODO
       sub_scope           = DART_LOCALITY_SCOPE_CACHE;
+      domain->hwinfo.cpu_id = 20000 + domain->num_domains * 100 +
+                              domain->num_units;
       break;
     case DART_LOCALITY_SCOPE_CACHE:
       domain->num_domains = 1; // TODO
@@ -603,6 +607,8 @@ dart_ret_t dart__base__locality__domain__create_subdomains(
           sub_scope           = DART_LOCALITY_SCOPE_CORE;
         }
       }
+      domain->hwinfo.cpu_id = 30000 + domain->num_domains * 100 +
+                              domain->num_units;
       break;
     default:
       domain->num_domains = 0;
@@ -1007,19 +1013,6 @@ dart_ret_t dart__base__locality__domain__create_numa_subdomain(
     int numa_unit_idx      = (rel_idx * num_uma_units) + u;
     dart_unit_t unit_id    = numa_domain->unit_ids[numa_unit_idx];
     subdomain->unit_ids[u] = unit_id;
-    DART_LOG_TRACE("dart__base__locality__domain__create_subdomains: "
-                   "UMA unit %d of %d (NUMA unit %d): unit id %d",
-                   u, subdomain->num_units, numa_unit_idx, unit_id);
-    /* set host and domain tag of unit in unit locality map: */
-    dart_unit_locality_t * unit_loc;
-    DART_ASSERT_RETURNS(
-      dart__base__unit_locality__at(unit_mapping, unit_id, &unit_loc),
-      DART_OK);
-    DART_LOG_TRACE("dart__base__locality__domain__create_subdomains: "
-                   "setting unit %d domain_tag: %s host: %s",
-                   unit_id, subdomain->domain_tag, subdomain->host);
-    strncpy(unit_loc->domain_tag, subdomain->domain_tag,
-            DART_LOCALITY_DOMAIN_TAG_MAX_SIZE);
   }
   return DART_OK;
 }
@@ -1094,8 +1087,8 @@ dart_ret_t dart__base__locality__domain__create_package_subdomain(
 
   subdomain->hwinfo.shared_mem_kb
     = subdomain->hwinfo.cache_sizes[cache_level] / 1024;
-  subdomain->num_domains
-    = num_separate_caches;
+//  subdomain->num_domains
+//    = num_separate_caches;
 
   free(cache_ids);
 
@@ -1120,11 +1113,21 @@ dart_ret_t dart__base__locality__domain__create_cache_subdomain(
   size_t num_cachedom_cores     = num_parent_cores / num_domains;
   // Package at cache level 3, package cache subdomain (= cache_domain)
   // at 2, so cache sub-domain at 1:
-  int    cache_level            = 1;
+  int    cache_level            = 2;
   subdomain->num_nodes          = 1;
   subdomain->hwinfo.num_numa    = 1;
   subdomain->num_units          = num_cachedom_units;
   subdomain->hwinfo.num_cores   = num_cachedom_cores;
+
+  subdomain->hwinfo.numa_id     = 10000 * cache_domain->num_domains +
+                                  100 * cache_domain->num_units;
+
+  if (cache_domain->scope == DART_LOCALITY_SCOPE_CACHE) {
+    cache_level--;
+  }
+  if (cache_domain->parent->scope == DART_LOCALITY_SCOPE_CACHE) {
+    cache_level--;
+  }
 
   if (subdomain->num_units > 0) {
     subdomain->unit_ids = malloc(subdomain->num_units * sizeof(dart_unit_t));
@@ -1134,7 +1137,21 @@ dart_ret_t dart__base__locality__domain__create_cache_subdomain(
   for (int u = 0; u < subdomain->num_units; ++u) {
     int unit_idx           = (rel_idx * num_cachedom_units) + u;
     dart_unit_t unit_id    = cache_domain->unit_ids[unit_idx];
-    subdomain->unit_ids[u] = unit_id;
+
+    if (cache_level == 0) {
+      subdomain->unit_ids[u] = unit_id;
+      subdomain->num_domains = subdomain->num_units;
+      /* set host and domain tag of unit in unit locality map: */
+      dart_unit_locality_t * unit_loc;
+      DART_ASSERT_RETURNS(
+        dart__base__unit_locality__at(unit_mapping, unit_id, &unit_loc),
+        DART_OK);
+      DART_LOG_TRACE("dart__base__locality__domain__create_subdomains: "
+                     "setting unit %d domain_tag: %s host: %s",
+                     unit_id, subdomain->domain_tag, subdomain->host);
+      strncpy(unit_loc->domain_tag, subdomain->domain_tag,
+              DART_LOCALITY_DOMAIN_TAG_MAX_SIZE);
+    }
   }
   subdomain->hwinfo.shared_mem_kb
     = subdomain->hwinfo.cache_sizes[cache_level] / 1024;
