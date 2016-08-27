@@ -51,6 +51,7 @@ LocalityJSONPrinter & LocalityJSONPrinter::operator<<(
                             << hwinfo.cache_ids[1]   << ","
                             << hwinfo.cache_ids[2]   << " ], "
      << "'mem_mbps': "      << hwinfo.max_shmem_mbps << ", "
+     << "'shared_mem_kb': " << hwinfo.shared_mem_kb  << ", "
      << "'system_mb': "     << hwinfo.system_memory  << ", "
      << "'numa_mb': "       << hwinfo.numa_memory
      << " }";
@@ -68,6 +69,8 @@ LocalityJSONPrinter & LocalityJSONPrinter::operator<<(
     case DART_LOCALITY_SCOPE_MODULE:  *this << "'MODULE'";    break;
     case DART_LOCALITY_SCOPE_NUMA:    *this << "'NUMA'";      break;
     case DART_LOCALITY_SCOPE_UNIT:    *this << "'UNIT'";      break;
+    case DART_LOCALITY_SCOPE_PACKAGE: *this << "'PACKAGE'";   break;
+    case DART_LOCALITY_SCOPE_CACHE:   *this << "'CACHE'";     break;
     case DART_LOCALITY_SCOPE_CORE:    *this << "'CORE'";      break;
     default:                          *this << "'UNDEFINED'"; break;
   }

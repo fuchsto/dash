@@ -186,6 +186,8 @@ typedef struct
   /** Maximum local shared memory bandwidth in MB/s. */
   int   max_shmem_mbps;
 
+  int   shared_mem_kb;
+
   /** Maximum allocatable memory per node in MB */
   int   system_memory;
 
