@@ -35,7 +35,6 @@ LocalityJSONPrinter & LocalityJSONPrinter::operator<<(
   os << "{ "
      << "'numa_id': "       << hwinfo.numa_id        << ", "
      << "'num_numa': "      << hwinfo.num_numa       << ", "
-     << "'num_sockets': "   << hwinfo.num_sockets    << ", "
      << "'num_cores': "     << hwinfo.num_cores      << ", "
      << "'cpu_id': "        << hwinfo.cpu_id         << ", "
      << "'threads':{ "
@@ -86,33 +85,33 @@ LocalityJSONPrinter & LocalityJSONPrinter::print_domain(
 
   *this << "{\n";
 
-  *this << indent << "'scope': " << domain->scope << ",\n"
-        << indent << "'level': " << domain->level << ",\n"
-        << indent << "'idx': "   << domain->relative_index << ",\n";
+  *this << indent << "'scope'    : " << domain->scope << ",\n"
+        << indent << "'level'    : " << domain->level << ",\n"
+        << indent << "'idx'      : " << domain->relative_index << ",\n";
 
   if (static_cast<int>(domain->scope) <
       static_cast<int>(DART_LOCALITY_SCOPE_NODE)) {
-    *this << indent << "'nodes': " << domain->num_nodes << ",\n";
+    *this << indent << "'nodes'    : " << domain->num_nodes << ",\n";
   }
 
   if ((static_cast<int>(domain->scope) ==
        static_cast<int>(DART_LOCALITY_SCOPE_NODE)) ||
       (static_cast<int>(domain->scope) ==
        static_cast<int>(DART_LOCALITY_SCOPE_MODULE))) {
-    *this << indent << "'host': '"   << domain->host    << "',\n";
+    *this << indent << "'host'     : '"   << domain->host    << "',\n";
   }
 
   if (static_cast<int>(domain->scope) ==
       static_cast<int>(DART_LOCALITY_SCOPE_NODE)) {
-    *this << indent << "'node_id': " << domain->node_id << ",\n";
+    *this << indent << "'node_id'  : " << domain->node_id << ",\n";
   }
   else if (static_cast<int>(domain->scope) >=
       static_cast<int>(DART_LOCALITY_SCOPE_NUMA)) {
-    *this << indent << "'numa_id': " << domain->hwinfo.numa_id  << ",\n";
+    *this << indent << "'numa_id'  : " << domain->hwinfo.numa_id  << ",\n";
   }
 
   if (domain->num_units > 0) {
-    *this << indent << "'units': " << "[ ";
+    *this << indent << "'units'    : " << "[ ";
     for (int u = 0; u < domain->num_units; ++u) {
       dart_unit_t g_unit_id;
       dart_team_unit_l2g(domain->team, domain->unit_ids[u], &g_unit_id);
@@ -131,16 +130,16 @@ LocalityJSONPrinter & LocalityJSONPrinter::print_domain(
       dart_unit_locality_t * uloc;
       dart_unit_locality(team, unit_id, &uloc);
       dart_team_unit_l2g(uloc->team, unit_id, &unit_gid);
-      *this << indent << "'unit_id': { "
+      *this << indent << "'unit_id'  : { "
                       << "'local_id': "  << uloc->unit << ", "
                       << "'team': "      << uloc->team << ", "
                       << "'global_id': " << unit_gid
                       << " }, \n"
-            << indent << "'unit_locality': { "
+            << indent << "'unit_loc' : { "
                       << "'domain': '"   << uloc->domain_tag << "', "
                       << "'host': '"     << uloc->host       << "', "
                       << "'hwinfo': "    << uloc->hwinfo
-                      << " } ";
+                      << " }";
     }
   } else {
     *this << indent << "'hwinfo': " << domain->hwinfo << " ";
@@ -158,16 +157,13 @@ LocalityJSONPrinter & LocalityJSONPrinter::print_domain(
         *this << indent;
         std::string sub_indent = indent;
 
-        if (d < domain->num_domains - 1) {
-          sub_indent += " ";
-          *this << " ";
-        } else if (d == domain->num_domains - 1) {
+        if (d <= domain->num_domains - 1) {
           sub_indent += " ";
           *this << " ";
         }
-        sub_indent += std::string(8, ' ');
+        sub_indent += std::string(3, ' ');
 
-        *this << "    '" << domain->domains[d].domain_tag << "' : ";
+        *this << " '" << domain->domains[d].domain_tag << "' : ";
 
         print_domain(team, &domain->domains[d], sub_indent);
 
@@ -177,7 +173,7 @@ LocalityJSONPrinter & LocalityJSONPrinter::print_domain(
         *this << "\n";
       }
     }
-    *this << indent << " }";
+    *this << indent << "}";
   }
 
   *this << " }";

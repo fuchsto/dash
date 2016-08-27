@@ -754,8 +754,8 @@ dart_ret_t dart__base__locality__domain__create_global_subdomain(
       rel_idx,
       &node_hostname),
     DART_OK);
-  DART_LOG_TRACE("dart__base__locality__domain__create_subdomains: host: %s",
-                 node_hostname);
+  DART_LOG_TRACE("dart__base__locality__domain__create_subdomains: "
+                 "host: %s", node_hostname);
   strncpy(subdomain->host, node_hostname, DART_LOCALITY_HOST_MAX_SIZE);
 
   dart_unit_t * node_unit_ids;
@@ -768,11 +768,13 @@ dart_ret_t dart__base__locality__domain__create_global_subdomain(
       &num_node_units),
     DART_OK);
   /* relative sub-domain index at global scope is node id: */
-  subdomain->node_id    = rel_idx;
-  subdomain->num_nodes  = 1;
-  subdomain->num_units  = num_node_units;
+  subdomain->node_id              = rel_idx;
+  subdomain->num_nodes            = 1;
+  subdomain->num_units            = num_node_units;
+  subdomain->hwinfo.shared_mem_kb = subdomain->hwinfo.numa_memory * 1024;
   if (subdomain->num_units > 0) {
-    subdomain->unit_ids = malloc(subdomain->num_units * sizeof(dart_unit_t));
+    subdomain->unit_ids = malloc(subdomain->num_units *
+                                 sizeof(dart_unit_t));
   } else {
     subdomain->unit_ids = NULL;
   }
@@ -921,11 +923,13 @@ dart_ret_t dart__base__locality__domain__create_module_subdomain(
   DART_LOG_TRACE("dart__base__locality__domain__create_subdomains: "
                  "number of units in NUMA domain %d: %d",
                   rel_idx, num_numa_units);
-  subdomain->num_nodes          = 1;
-  subdomain->hwinfo.num_numa    = 1;
-  subdomain->num_units          = num_numa_units;
+  subdomain->num_nodes            = 1;
+  subdomain->hwinfo.num_numa      = 1;
+  subdomain->hwinfo.shared_mem_kb = subdomain->hwinfo.numa_memory * 1024;
+  subdomain->num_units            = num_numa_units;
   if (subdomain->num_units > 0) {
-    subdomain->unit_ids = malloc(subdomain->num_units * sizeof(dart_unit_t));
+    subdomain->unit_ids = malloc(subdomain->num_units *
+                                 sizeof(dart_unit_t));
   } else {
     subdomain->unit_ids = NULL;
   }
@@ -973,9 +977,6 @@ dart_ret_t dart__base__locality__domain__create_numa_subdomain(
                  "== %d of %d, units:%d",
                  rel_idx,
                  numa_domain->num_domains, numa_domain->num_units);
-
-// int block = 1;
-// while(block);
 
   /*
    * TODO: Assuming that segments are homogenous such that total number
@@ -1066,9 +1067,6 @@ dart_ret_t dart__base__locality__domain__create_package_subdomain(
 
   /* Determine number of caches: */
 
-// int block = 1;
-// while(block);
-
   /* Storing unit cache ids { L1, L2, L3 } in order:
    *
    *   [ u0.L1, u1.L1, ... u0.L2, u1.L2, ... u0.L3, u1.L3 ... ]
@@ -1105,8 +1103,8 @@ dart_ret_t dart__base__locality__domain__create_package_subdomain(
 
   subdomain->hwinfo.shared_mem_kb
     = subdomain->hwinfo.cache_sizes[cache_level] / 1024;
-//  subdomain->num_domains
-//    = num_separate_caches;
+  subdomain->num_domains
+    = num_separate_caches;
 
   free(cache_ids);
 

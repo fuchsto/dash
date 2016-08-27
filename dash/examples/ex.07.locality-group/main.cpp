@@ -15,6 +15,11 @@ using namespace dash;
 
 int main(int argc, char ** argv)
 {
+  float fsleep = 1;
+  if (argc > 1 && std::string(argv[1]) == "-nw") {
+    fsleep = 0;
+  }
+
   // Note: barriers and sleeps are only required to prevent output of
   //       different units to interleave.
 
@@ -57,7 +62,7 @@ int main(int argc, char ** argv)
 
   {
     dart_barrier(DART_TEAM_ALL);
-    sleep(1);
+    sleep(1 * fsleep);
     if (myid == 0) {
       if (argc < 3 || std::string(argv[1]) != "-g") {
         cout << "Usage:"
@@ -82,7 +87,7 @@ int main(int argc, char ** argv)
       }
       cout << separator << endl;
     } else {
-      sleep(1);
+      sleep(1 * fsleep);
     }
     dart_barrier(DART_TEAM_ALL);
   }
@@ -96,7 +101,7 @@ int main(int argc, char ** argv)
   cout << i_os.str();
 
   dart_barrier(DART_TEAM_ALL);
-  sleep(1);
+  sleep(1 * fsleep);
 
   if (myid == 0) {
     cout << separator << endl;
@@ -185,7 +190,7 @@ int main(int argc, char ** argv)
     cout << separator << endl;
 
   } else {
-    sleep(2);
+    sleep(2 * fsleep);
   }
 
   // To prevent interleaving output:
