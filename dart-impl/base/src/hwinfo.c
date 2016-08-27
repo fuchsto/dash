@@ -97,6 +97,7 @@ dart_ret_t dart_hwinfo(
   hw.cache_shared[0]     = -1;
   hw.cache_shared[1]     = -1;
   hw.cache_shared[2]     = -1;
+  hw.shared_mem_kb       = -1;
   hw.max_shmem_mbps      = -1;
   hw.system_memory       = -1;
   hw.numa_memory         = -1;
