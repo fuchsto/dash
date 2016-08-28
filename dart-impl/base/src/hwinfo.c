@@ -166,17 +166,35 @@ dart_ret_t dart_hwinfo(
   /* Resolve cache sizes, ordered by locality (i.e. smallest first): */
   int level = 0;
 
+  /* hwloc can resolve the physical index (os_index) of the active unit,
+   * not the logical index.
+   * Queries in the topology hierarchy require the logical index, however.
+   * As a workaround, units scan the topology for the logical index of the
+   * CPU object that has a matching physical index.
+   */
+
   /* Get PU of active thread: */
-  int flags = 0; // HWLOC_CPUBIND_PROCESS;
   hwloc_cpuset_t cpuset = hwloc_bitmap_alloc();
-  int ret   = hwloc_get_last_cpu_location(topology, cpuset, flags);
-  hw.cpu_id = hwloc_bitmap_first(cpuset);
+  int flags     = 0; // HWLOC_CPUBIND_PROCESS;
+  int ret       = hwloc_get_last_cpu_location(topology, cpuset, flags);
+  int cpu_os_id = hwloc_bitmap_first(cpuset);
   hwloc_bitmap_free(cpuset);
 
-  DART_LOG_TRACE("dart_hwinfo: hwloc : unit PU logical index: %d",
-                 hw.cpu_id);
+  hwloc_obj_t cpu_obj;
+  for (cpu_obj =
+        hwloc_get_obj_by_type(topology, HWLOC_OBJ_PU, 0);
+       cpu_obj;
+       cpu_obj = cpu_obj->next_cousin) {
+    if (cpu_obj->os_index == cpu_os_id) {
+      hw.cpu_id = cpu_obj->logical_index;
+      break;
+    }
+  }
 
-  /* PU to CORE object: */
+  DART_LOG_TRACE("dart_hwinfo: hwloc : cpu_id phys:%d logical:%d",
+                 cpu_os_id, hw.cpu_id);
+
+  /* PU (cpu_id) to CORE (core_id) object: */
   hwloc_obj_t core_obj;
   for (core_obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_PU, hw.cpu_id);
        core_obj;
@@ -184,7 +202,7 @@ dart_ret_t dart_hwinfo(
     if (core_obj->type == HWLOC_OBJ_CORE) { break; }
   }
   if (core_obj) {
-    hw.core_id = core_obj->os_index;
+    hw.core_id = core_obj->logical_index;
 
     DART_LOG_TRACE("dart_hwinfo: hwloc : unit CORE logical index: %d",
                    hw.core_id);
@@ -215,7 +233,7 @@ dart_ret_t dart_hwinfo(
          numa_obj;
          numa_obj = numa_obj->parent) {
       if (numa_obj->type == HWLOC_OBJ_NODE) {
-        hw.num_sockets = 1000 + numa_obj->os_index;
+        hw.numa_id = numa_obj->os_index;
         break;
       }
     }
@@ -280,9 +298,10 @@ dart_ret_t dart_hwinfo(
   hwloc_topology_destroy(topology);
   DART_LOG_TRACE("dart_hwinfo: hwloc: "
                  "num_sockets:%d num_numa:%d "
-                 "numa_id:%d num_cores:%d core_id:%d",
+                 "numa_id:%d num_cores:%d core_id:%d cpu_id:d%",
                  hw.num_sockets,
-                 hw.num_numa, hw.numa_id, hw.num_cores, hw.core_id);
+                 hw.num_numa, hw.numa_id, hw.num_cores,
+                 hw.core_id, hw.cpu_id);
 #endif /* DART_ENABLE_HWLOC */
 
 #ifdef DART_ENABLE_PAPI
@@ -367,7 +386,7 @@ dart_ret_t dart_hwinfo(
     hw.num_numa = numa_max_node() + 1;
   }
   if (1 || hw.numa_id < 0 && hw.cpu_id >= 0) {
-    hw.numa_id  = numa_node_of_cpu(hw.cpu_id);
+//  hw.numa_id  = numa_node_of_cpu(hw.cpu_id);
     hw.max_shmem_mbps = sched_getcpu();
   }
   DART_LOG_TRACE("dart_hwinfo: numalib: "
