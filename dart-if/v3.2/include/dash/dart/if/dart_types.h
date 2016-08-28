@@ -161,6 +161,9 @@ typedef struct
   int   numa_id;
   /** The unit's affine core, unique identifier within a processing
    *  module. */
+  int   core_id;
+  /** The unit's affine processing unit (SMP), unique identifier
+   *  within a processing module. */
   int   cpu_id;
 
   /** Minimum clock frequency of CPUs in the domain. */

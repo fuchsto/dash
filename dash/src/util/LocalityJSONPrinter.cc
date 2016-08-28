@@ -35,6 +35,7 @@ LocalityJSONPrinter & LocalityJSONPrinter::operator<<(
   os << "{ "
      << "'numa_id':"       << hwinfo.numa_id        << ", "
      << "'num_cores':"     << hwinfo.num_cores      << ", "
+     << "'core_id':"       << hwinfo.core_id        << ", "
      << "'cpu_id':"        << hwinfo.cpu_id         << ", "
      << "'threads':{"
      << "'min':"           << hwinfo.min_threads    << ","

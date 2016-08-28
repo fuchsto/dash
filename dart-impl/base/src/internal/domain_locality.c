@@ -1054,12 +1054,28 @@ dart_ret_t dart__base__locality__domain__create_package_subdomain(
   size_t num_cachedom_units     = package_domain->num_units / num_domains;
   size_t num_parent_cores       = package_domain->hwinfo.num_cores;
   size_t num_cachedom_cores     = num_parent_cores / num_domains;
+  size_t num_unbalanced_cores   = num_parent_cores -
+                                  (num_cachedom_cores * num_domains);
   // Package at cache level 3 so package sub-domain at 2:
   int    cache_level            = 2;
   subdomain->num_nodes          = 1;
   subdomain->hwinfo.num_numa    = 1;
   subdomain->num_units          = num_cachedom_units;
   subdomain->hwinfo.num_cores   = num_cachedom_cores;
+
+  if (num_cachedom_cores < 1) {
+    /* Underflow split of cores to UMA nodes, e.g. 10/12.
+     * TODO: Clarify if this case occurs and if defaulting to 1 is
+     *       sufficient. */
+    num_cachedom_cores = 1;
+  } else if (num_unbalanced_cores > 0) {
+    /* Unbalanced split of cores to UMA nodes, e.g. 12 units / 10 nodes.
+     * First units ordered by unit id get additional core assigned, e.g.
+     * unit 0 and 1: */
+    if ((size_t)(rel_idx) < num_unbalanced_cores) {
+      num_cachedom_cores++;
+    }
+  }
 
   if (subdomain->num_units > 0) {
     subdomain->unit_ids = malloc(subdomain->num_units *
@@ -1137,6 +1153,8 @@ dart_ret_t dart__base__locality__domain__create_cache_subdomain(
   size_t num_cachedom_units     = cache_domain->num_units / num_domains;
   size_t num_parent_cores       = cache_domain->hwinfo.num_cores;
   size_t num_cachedom_cores     = num_parent_cores / num_domains;
+  size_t num_unbalanced_cores   = num_parent_cores -
+                                  (num_cachedom_cores * num_domains);
   // Package at cache level 3, package cache subdomain (= cache_domain)
   // at 2, so cache sub-domain at 1:
   int    cache_level            = 2;
@@ -1144,6 +1162,20 @@ dart_ret_t dart__base__locality__domain__create_cache_subdomain(
   subdomain->hwinfo.num_numa    = 1;
   subdomain->num_units          = num_cachedom_units;
   subdomain->hwinfo.num_cores   = num_cachedom_cores;
+
+  if (num_cachedom_cores < 1) {
+    /* Underflow split of cores to UMA nodes, e.g. 10/12.
+     * TODO: Clarify if this case occurs and if defaulting to 1 is
+     *       sufficient. */
+    num_cachedom_cores = 1;
+  } else if (num_unbalanced_cores > 0) {
+    /* Unbalanced split of cores to UMA nodes, e.g. 12 units / 10 nodes.
+     * First units ordered by unit id get additional core assigned, e.g.
+     * unit 0 and 1: */
+    if ((size_t)(rel_idx) < num_unbalanced_cores) {
+      num_cachedom_cores++;
+    }
+  }
 
   if (cache_domain->scope == DART_LOCALITY_SCOPE_CACHE) {
     cache_level--;
