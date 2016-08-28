@@ -137,11 +137,12 @@ dart_ret_t dart__base__unit_locality__create(
     dart_unit_locality_t * ulm_u = &mapping->unit_localities[u];
     DART_LOG_TRACE("dart__base__unit_locality__create: unit[%d]: "
                    "unit:%d host:%s domain:%s "
-                   "num_cores:%d cpu_id:%d "
+                   "num_cores:%d core_id:%d cpu_id:%d "
                    "num_numa:%d numa_id:%d "
                    "nthreads:%d",
                    u, ulm_u->unit, ulm_u->host, ulm_u->domain_tag,
-                   ulm_u->hwinfo.num_cores, ulm_u->hwinfo.cpu_id,
+                   ulm_u->hwinfo.num_cores, ulm_u->hwinfo.core_id,
+                   ulm_u->hwinfo.cpu_id,
                    ulm_u->hwinfo.num_numa, ulm_u->hwinfo.numa_id,
                    ulm_u->hwinfo.max_threads);
   }

@@ -92,6 +92,9 @@ dart_ret_t dart__base__locality__domain__init(
   loc->domains        = NULL;
   loc->num_nodes      = -1;
   loc->num_units      = -1;
+
+  dart_hwinfo_init(&(loc->hwinfo));
+
   DART_LOG_TRACE("dart__base__locality__domain_locality_init >");
   return DART_OK;
 }
@@ -527,6 +530,9 @@ dart_ret_t dart__base__locality__domain__create_subdomains(
    *   Determine the number of sub-domains and their scope.                 *
    * ---------------------------------------------------------------------- */
 
+  static int block = 0;
+  while(block);
+
   dart_locality_scope_t sub_scope;
   sub_scope           = DART_LOCALITY_SCOPE_UNDEFINED;
   const char  * module_hostname;
@@ -656,7 +662,6 @@ dart_ret_t dart__base__locality__domain__create_subdomains(
     dart__base__locality__domain__init(subdomain);
 
     /* Initialize hwinfo from parent as most properties are identical: */
-    subdomain->hwinfo         = domain->hwinfo;
     subdomain->parent         = domain;
     subdomain->scope          = sub_scope;
     subdomain->relative_index = rel_idx;

@@ -69,39 +69,46 @@ static const int BYTES_PER_MB = (1024 * 1024);
  *       where this would lead to drastic host/target load imbalance.
  */
 
+dart_ret_t dart_hwinfo_init(
+  dart_hwinfo_t * hw)
+{
+  hw->num_sockets         = -1;
+  hw->num_numa            = -1;
+  hw->numa_id             = -1;
+  hw->num_cores           = -1;
+  hw->core_id             = -1;
+  hw->cpu_id              = -1;
+  hw->min_cpu_mhz         = -1;
+  hw->max_cpu_mhz         = -1;
+  hw->min_threads         = -1;
+  hw->max_threads         = -1;
+  hw->cache_ids[0]        = -1;
+  hw->cache_ids[1]        = -1;
+  hw->cache_ids[2]        = -1;
+  hw->cache_sizes[0]      = -1;
+  hw->cache_sizes[1]      = -1;
+  hw->cache_sizes[2]      = -1;
+  hw->cache_line_sizes[0] = -1;
+  hw->cache_line_sizes[1] = -1;
+  hw->cache_line_sizes[2] = -1;
+  hw->cache_shared[0]     = -1;
+  hw->cache_shared[1]     = -1;
+  hw->cache_shared[2]     = -1;
+  hw->shared_mem_kb       = -1;
+  hw->max_shmem_mbps      = -1;
+  hw->system_memory       = -1;
+  hw->numa_memory         = -1;
+
+  return DART_OK;
+}
+
 dart_ret_t dart_hwinfo(
   dart_hwinfo_t * hwinfo)
 {
   DART_LOG_DEBUG("dart_hwinfo()");
 
   dart_hwinfo_t hw;
-
-  hw.num_sockets         = -1;
-  hw.num_numa            = -1;
-  hw.numa_id             = -1;
-  hw.num_cores           = -1;
-  hw.core_id             = -1;
-  hw.cpu_id              = -1;
-  hw.min_cpu_mhz         = -1;
-  hw.max_cpu_mhz         = -1;
-  hw.min_threads         = -1;
-  hw.max_threads         = -1;
-  hw.cache_ids[0]        = -1;
-  hw.cache_ids[1]        = -1;
-  hw.cache_ids[2]        = -1;
-  hw.cache_sizes[0]      = -1;
-  hw.cache_sizes[1]      = -1;
-  hw.cache_sizes[2]      = -1;
-  hw.cache_line_sizes[0] = -1;
-  hw.cache_line_sizes[1] = -1;
-  hw.cache_line_sizes[2] = -1;
-  hw.cache_shared[0]     = -1;
-  hw.cache_shared[1]     = -1;
-  hw.cache_shared[2]     = -1;
-  hw.shared_mem_kb       = -1;
-  hw.max_shmem_mbps      = -1;
-  hw.system_memory       = -1;
-  hw.numa_memory         = -1;
+  dart_hwinfo_init(&hw);
 
   char * max_shmem_mbps_str = getenv("DASH_MAX_SHMEM_MBPS");
   if (NULL != max_shmem_mbps_str) {
@@ -160,7 +167,7 @@ dart_ret_t dart_hwinfo(
   int level = 0;
 
   /* Get PU of active thread: */
-  int flags = HWLOC_CPUBIND_PROCESS;
+  int flags = 0; // HWLOC_CPUBIND_PROCESS;
   hwloc_cpuset_t cpuset = hwloc_bitmap_alloc();
   int ret   = hwloc_get_last_cpu_location(topology, cpuset, flags);
   hw.cpu_id = hwloc_bitmap_first(cpuset);
@@ -177,7 +184,7 @@ dart_ret_t dart_hwinfo(
     if (core_obj->type == HWLOC_OBJ_CORE) { break; }
   }
   if (core_obj) {
-    hw.core_id = core_obj->logical_index;
+    hw.core_id = core_obj->os_index;
 
     DART_LOG_TRACE("dart_hwinfo: hwloc : unit CORE logical index: %d",
                    hw.core_id);
@@ -195,6 +202,21 @@ dart_ret_t dart_hwinfo(
         DART_LOG_TRACE("dart_hwinfo: hwloc : cache level %d : id:%d size:%d",
                        level, hw.cache_ids[level], hw.cache_sizes[level]);
         ++level;
+      } else if (level > 0) {
+        /* Above highest CACHE level */
+        break;
+      }
+    }
+  }
+  if (hw.numa_id < 0) {
+    hwloc_obj_t numa_obj;
+    for (numa_obj =
+           hwloc_get_obj_by_type(topology, HWLOC_OBJ_PU, hw.cpu_id);
+         numa_obj;
+         numa_obj = numa_obj->parent) {
+      if (numa_obj->type == HWLOC_OBJ_NODE) {
+        hw.num_sockets = 1000 + numa_obj->os_index;
+        break;
       }
     }
   }
@@ -225,7 +247,8 @@ dart_ret_t dart_hwinfo(
       hw.num_cores = n_cores;
     }
 	}
-  if (hw.num_cores > 0 && hw.max_threads < 0) {
+  if (hw.min_threads < 0 && hw.max_threads < 0 &&
+      hw.num_cores > 0 && hw.max_threads < 0) {
     int n_cpus     = hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_PU);
     hw.min_threads = 1;
     hw.max_threads = n_cpus / hw.num_cores;
@@ -256,8 +279,10 @@ dart_ret_t dart_hwinfo(
   }
   hwloc_topology_destroy(topology);
   DART_LOG_TRACE("dart_hwinfo: hwloc: "
-                 "num_sockets:%d num_numa:%d num_cores:%d",
-                 hw.num_sockets, hw.num_numa, hw.num_cores);
+                 "num_sockets:%d num_numa:%d "
+                 "numa_id:%d num_cores:%d core_id:%d",
+                 hw.num_sockets,
+                 hw.num_numa, hw.numa_id, hw.num_cores, hw.core_id);
 #endif /* DART_ENABLE_HWLOC */
 
 #ifdef DART_ENABLE_PAPI
@@ -341,8 +366,9 @@ dart_ret_t dart_hwinfo(
   if (hw.num_numa < 0) {
     hw.num_numa = numa_max_node() + 1;
   }
-  if (hw.numa_id < 0 && hw.cpu_id >= 0) {
+  if (1 || hw.numa_id < 0 && hw.cpu_id >= 0) {
     hw.numa_id  = numa_node_of_cpu(hw.cpu_id);
+    hw.max_shmem_mbps = sched_getcpu();
   }
   DART_LOG_TRACE("dart_hwinfo: numalib: "
                  "num_sockets:%d num_numa:%d numa_id:%d num_cores:%d",
