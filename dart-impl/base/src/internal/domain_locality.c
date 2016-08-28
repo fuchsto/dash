@@ -662,6 +662,8 @@ dart_ret_t dart__base__locality__domain__create_subdomains(
     dart__base__locality__domain__init(subdomain);
 
     /* Initialize hwinfo from parent as most properties are identical: */
+    subdomain->hwinfo         = domain->hwinfo;
+
     subdomain->parent         = domain;
     subdomain->scope          = sub_scope;
     subdomain->relative_index = rel_idx;

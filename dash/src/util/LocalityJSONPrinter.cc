@@ -33,7 +33,6 @@ LocalityJSONPrinter & LocalityJSONPrinter::operator<<(
 {
   std::ostringstream os;
   os << "{ "
-     << "'numa_id.hw':"    << hwinfo.num_sockets    << ", "
      << "'numa_id':"       << hwinfo.numa_id        << ", "
      << "'num_cores':"     << hwinfo.num_cores      << ", "
      << "'core_id':"       << hwinfo.core_id        << ", "

@@ -215,7 +215,7 @@ dart_ret_t dart_hwinfo(
       if (obj->type == HWLOC_OBJ_CACHE) {
         hw.cache_sizes[level]      = obj->attr->cache.size;
         hw.cache_line_sizes[level] = obj->attr->cache.linesize;
-        hw.cache_ids[level]        = obj->logical_index; // or: os_index
+        hw.cache_ids[level]        = obj->logical_index;
 
         DART_LOG_TRACE("dart_hwinfo: hwloc : cache level %d : id:%d size:%d",
                        level, hw.cache_ids[level], hw.cache_sizes[level]);
@@ -233,7 +233,7 @@ dart_ret_t dart_hwinfo(
          numa_obj;
          numa_obj = numa_obj->parent) {
       if (numa_obj->type == HWLOC_OBJ_NODE) {
-        hw.numa_id = numa_obj->os_index;
+        hw.numa_id = numa_obj->logical_index;
         break;
       }
     }
@@ -385,9 +385,8 @@ dart_ret_t dart_hwinfo(
   if (hw.num_numa < 0) {
     hw.num_numa = numa_max_node() + 1;
   }
-  if (1 || hw.numa_id < 0 && hw.cpu_id >= 0) {
-//  hw.numa_id  = numa_node_of_cpu(hw.cpu_id);
-    hw.max_shmem_mbps = sched_getcpu();
+  if (hw.numa_id < 0 && hw.cpu_id >= 0) {
+    hw.numa_id = numa_node_of_cpu(hw.cpu_id);
   }
   DART_LOG_TRACE("dart_hwinfo: numalib: "
                  "num_sockets:%d num_numa:%d numa_id:%d num_cores:%d",
