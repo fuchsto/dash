@@ -613,9 +613,18 @@ dart_ret_t dart__base__locality__domain__create_subdomains(
       }
       /* domain and its two parent domains are in cache scope, switch
        * to core scope: */
-      if (domain->scope                 == DART_LOCALITY_SCOPE_CACHE &&
-          domain->parent->scope         == DART_LOCALITY_SCOPE_CACHE) {
+      {
+        int cache_level = 3;
+        if (domain->scope == DART_LOCALITY_SCOPE_CACHE) {
+          cache_level--;
+        }
+        if (domain->parent->scope == DART_LOCALITY_SCOPE_CACHE) {
+          cache_level--;
+        }
         if (domain->parent->parent->scope == DART_LOCALITY_SCOPE_CACHE) {
+          cache_level--;
+        }
+        if (cache_level <= 0 || domain->hwinfo.cache_ids[cache_level] < 0) {
           domain->num_domains = domain->num_units;
           sub_scope           = DART_LOCALITY_SCOPE_CORE;
         }
@@ -727,6 +736,22 @@ dart_ret_t dart__base__locality__domain__create_subdomains(
     num_domain_units += subdomain->num_units;
   }
   domain->num_units = num_domain_units;
+
+  if (domain->num_domains > 0 &&
+      domain->scope > DART_LOCALITY_SCOPE_PACKAGE) {
+    memcpy(&domain->hwinfo.cache_ids,
+           &domain->domains[0].hwinfo.cache_ids,
+           sizeof(domain->hwinfo.cache_ids));
+    memcpy(&domain->hwinfo.cache_sizes,
+           &domain->domains[0].hwinfo.cache_sizes,
+           sizeof(domain->hwinfo.cache_sizes));
+  } else {
+    int blank_cache[3] = { -1, -1, -1 };
+    memcpy(&domain->hwinfo.cache_ids,
+           blank_cache, sizeof(blank_cache));
+    memcpy(&domain->hwinfo.cache_sizes,
+           blank_cache, sizeof(blank_cache));
+  }
 
   DART_LOG_DEBUG("dart__base__locality__domain__create_subdomains >");
   return DART_OK;
@@ -1216,6 +1241,10 @@ dart_ret_t dart__base__locality__domain__create_cache_subdomain(
                      unit_id, subdomain->domain_tag, subdomain->host);
       strncpy(unit_loc->domain_tag, subdomain->domain_tag,
               DART_LOCALITY_DOMAIN_TAG_MAX_SIZE);
+      memcpy(&subdomain->hwinfo.cache_ids, &unit_loc->hwinfo.cache_ids,
+             sizeof(unit_loc->hwinfo.cache_ids));
+      memcpy(&subdomain->hwinfo.cache_sizes, &unit_loc->hwinfo.cache_sizes,
+             sizeof(unit_loc->hwinfo.cache_sizes));
     }
   }
   subdomain->hwinfo.shared_mem_kb
