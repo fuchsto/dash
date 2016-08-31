@@ -72,41 +72,42 @@ public:
 
 public:
 
-  static inline int NumNodes()
-  {
-    return (_domain_loc == nullptr)
-           ? -1 : std::max<int>(_domain_loc->num_nodes, 1);
-  }
-
-  static inline int NumSockets()
-  {
-    return (_domain_loc == nullptr)
-           ? -1 : std::max<int>(_domain_loc->hwinfo.num_sockets, 1);
-  }
-
-  static inline int NumNUMANodes()
-  {
-    return (_domain_loc == nullptr)
-           ? -1 : std::max<int>(_domain_loc->hwinfo.num_numa, 1);
-  }
+//static inline int NumNodes()
+//{
+//  return (_domain_loc == nullptr)
+//         ? -1 : std::max<int>(_domain_loc->num_nodes, 1);
+//}
+//
+//static inline int NumSockets()
+//{
+//  return (_domain_loc == nullptr)
+//         ? -1 : std::max<int>(_domain_loc->hwinfo.num_sockets, 1);
+//}
+//
+//static inline int NumNUMANodes()
+//{
+//  return (_domain_loc == nullptr)
+//         ? -1 : std::max<int>(_domain_loc->hwinfo.num_numa, 1);
+//}
 
   static inline int NumCores()
   {
     return (_domain_loc == nullptr)
-           ? -1 : std::max<int>(_domain_loc->hwinfo.num_cores, 1);
+//         ? -1 : std::max<int>(_domain_loc->hwinfo.num_cores, 1);
+           ? -1 : std::max<int>(_domain_loc->num_cores, 1);
   }
 
-  static inline int MinThreads()
-  {
-    return (_domain_loc == nullptr)
-           ? -1 : std::max<int>(_domain_loc->hwinfo.min_threads, 1);
-  }
-
-  static inline int MaxThreads()
-  {
-    return (_domain_loc == nullptr)
-           ? -1 : std::max<int>(_domain_loc->hwinfo.max_threads, 1);
-  }
+//static inline int MinThreads()
+//{
+//  return (_domain_loc == nullptr)
+//         ? -1 : std::max<int>(_domain_loc->hwinfo.min_threads, 1);
+//}
+//
+//static inline int MaxThreads()
+//{
+//  return (_domain_loc == nullptr)
+//         ? -1 : std::max<int>(_domain_loc->hwinfo.max_threads, 1);
+//}
 
   /**
    * Number of CPU cores currently available to the active unit.
@@ -163,72 +164,74 @@ public:
    * \see dash::util::TeamLocality
    *
    */
-  static inline int NumUnitDomainThreads()
-  {
-    auto n_threads = dash::util::Locality::NumCores();
-    if (dash::util::Config::get<bool>("DASH_DISABLE_THREADS")) {
-      // Threads disabled in unit scope:
-      n_threads  = 1;
-    } else if (dash::util::Config::get<bool>("DASH_MAX_SMT")) {
-      // Configured to use SMT (hyperthreads):
-      n_threads *= dash::util::Locality::MaxThreads();
-    } else {
-      // Start one thread on every physical core assigned to this unit:
-      n_threads *= dash::util::Locality::MinThreads();
-    }
-    if (dash::util::Config::is_set("DASH_MAX_UNIT_THREADS")) {
-      n_threads  = std::min(dash::util::Config::get<int>(
-                              "DASH_MAX_UNIT_THREADS"),
-                            n_threads);
-    }
-    return n_threads;
-  }
+//static inline int NumUnitDomainThreads()
+//{
+//  // TODO: Should be provided by dash::util::UnitLocality
+//
+//  auto n_threads = dash::util::Locality::NumCores();
+//  if (dash::util::Config::get<bool>("DASH_DISABLE_THREADS")) {
+//    // Threads disabled in unit scope:
+//    n_threads  = 1;
+//  } else if (dash::util::Config::get<bool>("DASH_MAX_SMT")) {
+//    // Configured to use SMT (hyperthreads):
+//    n_threads *= dash::util::Locality::MaxThreads();
+//  } else {
+//    // Start one thread on every physical core assigned to this unit:
+//    n_threads *= dash::util::Locality::MinThreads();
+//  }
+//  if (dash::util::Config::is_set("DASH_MAX_UNIT_THREADS")) {
+//    n_threads  = std::min(dash::util::Config::get<int>(
+//                            "DASH_MAX_UNIT_THREADS"),
+//                          n_threads);
+//  }
+//  return n_threads;
+//}
 
-  static inline void SetNumNodes(int n)
-  {
-    _domain_loc->num_nodes = n;
-  }
-
-  static inline void SetNumSockets(int n)
-  {
-    if (_unit_loc == nullptr) {
-      return;
-    }
-    _domain_loc->hwinfo.num_sockets = n;
-  }
-
-  static inline void SetNumNUMANodes(int n)
-  {
-    if (_unit_loc == nullptr) {
-      return;
-    }
-    _domain_loc->hwinfo.num_numa = n;
-  }
-
-  static inline void SetNumCores(int n)
-  {
-    _domain_loc->hwinfo.num_cores = n;
-  }
-
-  static inline void SetMinThreads(int n)
-  {
-    _domain_loc->hwinfo.min_threads = n;
-  }
-
-  static inline void SetMaxThreads(int n)
-  {
-    _domain_loc->hwinfo.max_threads = n;
-  }
-
-  static int UnitNUMAId()
-  {
-    return _domain_loc->hwinfo.numa_id;
-  }
-
-  static int UnitCPUId()
-  {
-    return _domain_loc->hwinfo.cpu_id;
-  }
+//static inline void SetNumNodes(int n)
+//{
+//  _domain_loc->num_nodes = n;
+//}
+//
+//static inline void SetNumSockets(int n)
+//{
+//  if (_unit_loc == nullptr) {
+//    return;
+//  }
+//  _domain_loc->hwinfo.num_sockets = n;
+//}
+//
+//static inline void SetNumNUMANodes(int n)
+//{
+//  if (_unit_loc == nullptr) {
+//    return;
+//  }
+//  _domain_loc->hwinfo.num_numa = n;
+//}
+//
+//static inline void SetNumCores(int n)
+//{
+//  _domain_loc->hwinfo.num_cores = n;
+//}
+//
+//static inline void SetMinThreads(int n)
+//{
+//  _domain_loc->hwinfo.min_threads = n;
+//}
+//
+//static inline void SetMaxThreads(int n)
+//{
+//  _domain_loc->hwinfo.max_threads = n;
+//}
+//
+//static int UnitNUMAId()
+//{
+//  return _domain_loc->hwinfo.numa_id;
+//}
+//
+//static int UnitCPUId()
+//{
+//  return _domain_loc->hwinfo.cpu_id;
+//}
 
   static inline int CPUMaxMhz()
   {
@@ -251,7 +254,8 @@ public:
   {
     dart_unit_locality_t * ul;
     dart_unit_locality(DART_TEAM_ALL, unit, &ul);
-    return ul->host;
+//  return ul->host;
+    return ul->hwinfo.host;
   }
 
   static const UnitPinning Pinning(dart_unit_t unit)
@@ -264,8 +268,10 @@ public:
     pinning.cpu_id      = ul->hwinfo.cpu_id;
     pinning.numa_id     = ul->hwinfo.numa_id;
     pinning.num_threads = ul->hwinfo.max_threads;
-    strncpy(pinning.host,   ul->host,       40);
-    strncpy(pinning.domain, ul->domain_tag, 20);
+//  strncpy(pinning.host,   ul->host,       40);
+//  strncpy(pinning.domain, ul->domain_tag, 20);
+    strncpy(pinning.host,   ul->hwinfo.host,       40);
+    strncpy(pinning.domain, ul->domain.domain_tag, 20);
     return pinning;
   }
 
@@ -282,18 +288,19 @@ public:
   /**
    * Get local memory of system in MB
    */
-  static inline int SystemMemory(){
-    return _domain_loc->hwinfo.system_memory;
-  }
+//static inline int SystemMemory() {
+//  return _domain_loc->hwinfo.system_memory;
+//}
 
   /**
    * Get local memory per NUMA node in MB.
    * If system has no NUMA domains, returns
    * system memory.
    */
-  static inline int NUMAMemory(){
-    return _domain_loc->hwinfo.numa_memory;
-  }
+//static inline int NUMAMemory() {
+//  return _domain_loc->hwinfo.numa_memory;
+//}
+
 private:
   static void init();
 

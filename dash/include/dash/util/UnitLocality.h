@@ -79,25 +79,29 @@ public:
   inline std::string domain_tag() const
   {
     DASH_ASSERT(nullptr != _unit_locality);
-    return _unit_locality->domain_tag;
+//  return _unit_locality->domain_tag;
+    return _unit_locality->domain.domain_tag;
   }
 
   inline std::string host() const
   {
     DASH_ASSERT(nullptr != _unit_locality);
-    return _unit_locality->host;
+//  return _unit_locality->host;
+    return _unit_locality->hwinfo.host;
   }
 
   inline void set_domain_tag(
     const std::string & tag)
   {
-    strcpy(_unit_locality->domain_tag, tag.c_str());
+//  strcpy(_unit_locality->domain_tag, tag.c_str());
+    strcpy(_unit_locality->domain.domain_tag, tag.c_str());
   }
 
   inline void set_host(
     const std::string & hostname)
   {
-    strcpy(_unit_locality->host, hostname.c_str());
+//  strcpy(_unit_locality->host, hostname.c_str());
+    strcpy(_unit_locality->hwinfo.host, hostname.c_str());
   }
 
   inline int num_cores() const

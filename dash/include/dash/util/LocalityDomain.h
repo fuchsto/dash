@@ -341,17 +341,17 @@ public:
     return _unit_ids;
   }
 
-  inline const dart_hwinfo_t & hwinfo() const
-  {
-    DASH_ASSERT(_domain != nullptr);
-    return _domain->hwinfo;
-  }
+//inline const dart_hwinfo_t & hwinfo() const
+//{
+//  DASH_ASSERT(_domain != nullptr);
+//  return _domain->hwinfo;
+//}
 
-  inline dart_hwinfo_t & hwinfo()
-  {
-    DASH_ASSERT(_domain != nullptr);
-    return _domain->hwinfo;
-  }
+//inline dart_hwinfo_t & hwinfo()
+//{
+//  DASH_ASSERT(_domain != nullptr);
+//  return _domain->hwinfo;
+//}
 
   inline int level() const
   {
@@ -365,16 +365,16 @@ public:
            : static_cast<Scope_t>(_domain->scope);
   }
 
-  inline int node_id() const
-  {
-    return (nullptr == _domain ? -1 : _domain->node_id);
-  }
-
-  inline int num_nodes() const
-  {
-    return (nullptr == _domain ? -1 : _domain->num_nodes);
-  }
-
+//inline int node_id() const
+//{
+//  return (nullptr == _domain ? -1 : _domain->node_id);
+//}
+//
+//inline int num_nodes() const
+//{
+//  return (nullptr == _domain ? -1 : _domain->num_nodes);
+//}
+//
   inline int relative_index() const
   {
     return (nullptr == _domain ? -1 : _domain->relative_index);
