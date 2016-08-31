@@ -602,7 +602,9 @@ dart_ret_t dart__base__locality__domain__create_subdomains(
                      "--> CACHE scope: parent.num_units:%d",
                      domain->parent->num_units);
       sub_scope           = DART_LOCALITY_SCOPE_CACHE;
-      domain->num_domains = 1;
+      if (domain->num_domains < 0) {
+        domain->num_domains = 1;
+      }
       domain->num_units   = domain->parent->num_units /
                             domain->parent->num_domains;
       for (int u = 0; u < domain->num_units; u++) {
