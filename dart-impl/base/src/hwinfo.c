@@ -72,7 +72,6 @@ static const int BYTES_PER_MB = (1024 * 1024);
 dart_ret_t dart_hwinfo_init(
   dart_hwinfo_t * hw)
 {
-  hw->num_sockets         = -1;
   hw->num_numa            = -1;
   hw->numa_id             = -1;
   hw->num_cores           = -1;
@@ -91,13 +90,17 @@ dart_ret_t dart_hwinfo_init(
   hw->cache_line_sizes[0] = -1;
   hw->cache_line_sizes[1] = -1;
   hw->cache_line_sizes[2] = -1;
-  hw->cache_shared[0]     = -1;
-  hw->cache_shared[1]     = -1;
-  hw->cache_shared[2]     = -1;
-  hw->shared_mem_kb       = -1;
   hw->max_shmem_mbps      = -1;
   hw->system_memory       = -1;
   hw->numa_memory         = -1;
+  hw->num_scopes          = -1;
+
+  dart_locality_scope_pos_t undef_scope;
+  undef_scope.scope = DART_LOCALITY_SCOPE_UNDEFINED;
+  undef_scope.index = -1;
+  for (int s = 0; s < DART_LOCALITY_MAX_DOMAIN_SCOPES; s++) {
+    hw->scopes[s] = undef_scope;
+  }
 
   return DART_OK;
 }
@@ -162,9 +165,10 @@ dart_ret_t dart_hwinfo(
 
   hwloc_topology_t topology;
   hwloc_topology_init(&topology);
+  hwloc_topology_set_flags(topology,
+                           HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM |
+                           HWLOC_TOPOLOGY_FLAG_WHOLE_IO);
   hwloc_topology_load(topology);
-  /* Resolve cache sizes, ordered by locality (i.e. smallest first): */
-  int level = 0;
 
   /* hwloc can resolve the physical index (os_index) of the active unit,
    * not the logical index.
@@ -182,7 +186,7 @@ dart_ret_t dart_hwinfo(
 
   hwloc_obj_t cpu_obj;
   for (cpu_obj =
-        hwloc_get_obj_by_type(topology, HWLOC_OBJ_PU, 0);
+         hwloc_get_obj_by_type(topology, HWLOC_OBJ_PU, 0);
        cpu_obj;
        cpu_obj = cpu_obj->next_cousin) {
     if (cpu_obj->os_index == cpu_os_id) {
@@ -207,22 +211,39 @@ dart_ret_t dart_hwinfo(
     DART_LOG_TRACE("dart_hwinfo: hwloc : unit CORE logical index: %d",
                    hw.core_id);
 
+    hw.num_scopes   = 0;
+    int cache_level = 0;
     /* Use CORE object to resolve caches: */
     hwloc_obj_t obj;
     for (obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_CORE, hw.core_id);
          obj;
          obj = obj->parent) {
       if (obj->type == HWLOC_OBJ_CACHE) {
-        hw.cache_sizes[level]      = obj->attr->cache.size;
-        hw.cache_line_sizes[level] = obj->attr->cache.linesize;
-        hw.cache_ids[level]        = obj->logical_index;
+        hw.scopes[hw.num_scopes].scope = DART_LOCALITY_SCOPE_CACHE;
+        hw.scopes[hw.num_scopes].index = obj->logical_index;
 
-        DART_LOG_TRACE("dart_hwinfo: hwloc : cache level %d : id:%d size:%d",
-                       level, hw.cache_ids[level], hw.cache_sizes[level]);
-        ++level;
-      } else if (level > 0) {
-        /* Above highest CACHE level */
-        break;
+        hw.cache_sizes[cache_level]      = obj->attr->cache.size;
+        hw.cache_line_sizes[cache_level] = obj->attr->cache.linesize;
+        hw.cache_ids[cache_level]        = obj->logical_index;
+        cache_level++;
+        hw.num_scopes++;
+      } else if (obj->type == HWLOC_OBJ_NODE) {
+        hw.scopes[hw.num_scopes].scope = DART_LOCALITY_SCOPE_NUMA;
+        hw.scopes[hw.num_scopes].index = obj->logical_index;
+
+        hw.numa_id = obj->logical_index;
+        hw.num_scopes++;
+      } else if (obj->type ==
+#if HWLOC_API_VERSION > 0x00010700
+                 HWLOC_OBJ_PACKAGE
+#else
+                 HWLOC_OBJ_SOCKET
+#endif
+                ) {
+        hw.scopes[hw.num_scopes].scope = DART_LOCALITY_SCOPE_PACKAGE;
+        hw.scopes[hw.num_scopes].index = obj->logical_index;
+
+        hw.num_scopes++;
       }
     }
   }
@@ -238,27 +259,27 @@ dart_ret_t dart_hwinfo(
       }
     }
   }
-  if (hw.num_sockets < 0) {
-    // Resolve number of sockets:
-    int depth = hwloc_get_type_depth(topology, HWLOC_OBJ_SOCKET);
-    if (depth != HWLOC_TYPE_DEPTH_UNKNOWN) {
-      hw.num_sockets = hwloc_get_nbobjs_by_depth(topology, depth);
-    }
-  }
-  if (hw.num_numa < 0) {
-    /* NOTE:
-     * Do not use HWLOC_OBJ_NUMANODE (requires >= hwloc-1.11.0).
-     * HWLOC_OBJ_NODE is renamed to HWLOC_OBJ_NUMANODE in recent
-     * distribution hwloc-1.11.0 but still supported for backward
-     * compatibility and therefore works in all versions of hwloc.
-     * When HWLOC_OBJ_NODE is marked as deprecated, add a condition
-     * on hwloc version here.
-     */
-    int n_numa_nodes = hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_NODE);
-    if (n_numa_nodes > 0) {
-      hw.num_numa = n_numa_nodes;
-    }
-  }
+//if (hw.num_sockets < 0) {
+//  // Resolve number of sockets:
+//  int depth = hwloc_get_type_depth(topology, HWLOC_OBJ_SOCKET);
+//  if (depth != HWLOC_TYPE_DEPTH_UNKNOWN) {
+//    hw.num_sockets = hwloc_get_nbobjs_by_depth(topology, depth);
+//  }
+//}
+//if (hw.num_numa < 0) {
+//  /* NOTE:
+//   * Do not use HWLOC_OBJ_NUMANODE (requires >= hwloc-1.11.0).
+//   * HWLOC_OBJ_NODE is renamed to HWLOC_OBJ_NUMANODE in recent
+//   * distribution hwloc-1.11.0 but still supported for backward
+//   * compatibility and therefore works in all versions of hwloc.
+//   * When HWLOC_OBJ_NODE is marked as deprecated, add a condition
+//   * on hwloc version here.
+//   */
+//  int n_numa_nodes = hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_NODE);
+//  if (n_numa_nodes > 0) {
+//    hw.num_numa = n_numa_nodes;
+//  }
+//}
   if (hw.num_cores < 0) {
     int n_cores = hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_CORE);
     if (n_cores > 0) {
@@ -309,11 +330,13 @@ dart_ret_t dart_hwinfo(
 
   const PAPI_hw_info_t * papi_hwinfo = NULL;
   if (dart__base__locality__papi_init(&papi_hwinfo) == DART_OK) {
-    if (hw.num_sockets < 0) { hw.num_sockets = papi_hwinfo->sockets; }
-    if (hw.num_numa    < 0) { hw.num_numa    = papi_hwinfo->nnodes;  }
+//  if (hw.num_sockets < 0) { hw.num_sockets = papi_hwinfo->sockets; }
+//  if (hw.num_numa    < 0) { hw.num_numa    = papi_hwinfo->nnodes;  }
+    int num_sockets = papi_hwinfo->sockets;
     if (hw.num_cores   < 0) {
       int cores_per_socket = papi_hwinfo->cores;
-      hw.num_cores   = hw.num_sockets * cores_per_socket;
+//    hw.num_cores   = hw.num_sockets * cores_per_socket;
+      hw.num_cores   = num_sockets * cores_per_socket;
     }
     if (hw.min_cpu_mhz < 0 || hw.max_cpu_mhz < 0) {
       hw.min_cpu_mhz = papi_hwinfo->cpu_min_mhz;

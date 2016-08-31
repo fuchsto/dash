@@ -100,7 +100,7 @@ dart_ret_t dart__base__host_topology__create(
       DART_ASSERT_RETURNS(
         dart__base__unit_locality__at(unit_mapping, u, &ul),
         DART_OK);
-      if (strncmp(ul->host, hostnames[h], max_host_len) == 0) {
+      if (strncmp(ul->hwinfo.host, hostnames[h], max_host_len) == 0) {
         /* Unit is local to host at index h: */
         node_units->units[node_units->num_units] = ul->unit;
         node_units->num_units++;

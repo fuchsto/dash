@@ -137,7 +137,7 @@ dart_ret_t dart__base__locality__create(
   team_global_domain->parent         = NULL;
   team_global_domain->num_domains    = 0;
   team_global_domain->domains        = NULL;
-  team_global_domain->hwinfo         = *hwinfo;
+//team_global_domain->hwinfo         = *hwinfo;
   team_global_domain->num_units      = 0;
   team_global_domain->host[0]        = '\0';
   team_global_domain->domain_tag[0]  = '.';
@@ -172,7 +172,7 @@ dart_ret_t dart__base__locality__create(
     DART_ASSERT_RETURNS(
       dart__base__unit_locality__at(unit_mapping, u, &ul),
       DART_OK);
-    strncpy(hosts[u], ul->host, max_host_len);
+    strncpy(hosts[u], ul->hwinfo.host, max_host_len);
   }
 
   /* Resolve host topology from the unit's host names:
@@ -183,10 +183,10 @@ dart_ret_t dart__base__locality__create(
       hosts, team, unit_mapping, topo),
     DART_OK);
   dart__base__locality__host_topology_[team] = topo;
-  size_t num_nodes = topo->num_nodes;
-  DART_LOG_TRACE("dart__base__locality__create: nodes: %d", num_nodes);
+//size_t num_nodes = topo->num_nodes;
+//DART_LOG_TRACE("dart__base__locality__create: nodes: %d", num_nodes);
 
-  team_global_domain->num_nodes = num_nodes;
+//team_global_domain->num_nodes = num_nodes;
 
 #ifdef DART_ENABLE_LOGGING
   for (int h = 0; h < topo->num_hosts; ++h) {
@@ -539,13 +539,13 @@ dart_ret_t dart__base__locality__domain_group(
      *       so is not trivial.
      *       Using parent domain's hwinfo as an intermediate solution.
      */
-    group_domain->hwinfo         = group_parent_domain->hwinfo;
+//  group_domain->hwinfo         = group_parent_domain->hwinfo;
     group_domain->team           = group_parent_domain->team;
     group_domain->scope          = DART_LOCALITY_SCOPE_GROUP;
     group_domain->level          = group_parent_domain->level + 1;
     group_domain->parent         = group_parent_domain;
     group_domain->relative_index = group_parent_domain->num_domains;
-    group_domain->num_nodes      = group_parent_domain->num_nodes;
+//  group_domain->num_nodes      = group_parent_domain->num_nodes;
     group_domain->num_units      = 0;
     group_domain->unit_ids       = NULL;
     group_domain->num_domains    = 0;
@@ -868,7 +868,7 @@ dart_ret_t dart__base__locality__group_subdomains(
    * Set grouped partition of subdomains as child nodes of group domain:
    */
   group_domain->num_units = 0;
-  group_domain->num_nodes = 0;
+//group_domain->num_nodes = 0;
   for (int gd = 0; gd < num_grouped; gd++) {
     memcpy(&group_domain->domains[gd], &grouped_domains[gd],
            sizeof(dart_domain_locality_t));
