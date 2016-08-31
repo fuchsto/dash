@@ -534,16 +534,12 @@ dart_ret_t dart__base__locality__domain__num_separate_caches(
   for (int u = 0; u < num_dom_units; ++u) {
     int dom_unit_idx    = (rel_idx * num_dom_units) + u;
     dart_unit_t unit_id = domain->parent->unit_ids[dom_unit_idx];
-    DART_LOG_TRACE("dart__base__locality__domain__num_separate_caches: "
-                   "u:%d unit_id:%d", u, unit_id);
     /* set host and domain tag of unit in unit locality map: */
     dart_unit_locality_t * unit_loc;
     DART_ASSERT_RETURNS(
       dart__base__unit_locality__at(unit_mapping, unit_id, &unit_loc),
       DART_OK);
     (*cache_ids)[u] = unit_loc->hwinfo.cache_ids[cache_level];
-    DART_LOG_TRACE("dart__base__locality__domain__num_separate_caches: "
-                   "u:%d cache_ids[%d]:%d", u, cache_level, (*cache_ids)[u]);
   }
 
   *num_caches =
@@ -663,7 +659,6 @@ dart_ret_t dart__base__locality__domain__create_subdomains(
                          "--> PACKAGE scope: "
                          "num_package_caches:%d",
                          num_package_level_caches);
-#if 1
           if (num_package_level_caches > 0) {
             domain->num_domains = num_package_level_caches;
             sub_scope           = DART_LOCALITY_SCOPE_CACHE;
@@ -671,10 +666,6 @@ dart_ret_t dart__base__locality__domain__create_subdomains(
             domain->num_domains = domain->num_units;
             sub_scope           = DART_LOCALITY_SCOPE_CORE;
           }
-#else
-          domain->num_domains = domain->num_units;
-          sub_scope           = DART_LOCALITY_SCOPE_CORE;
-#endif
         }
         free(package_level_cache_ids);
       }
@@ -1223,8 +1214,6 @@ dart_ret_t dart__base__locality__domain__create_package_subdomain(
   subdomain->num_domains          = num_separate_caches;
 
   if (cache_ids[0] < 0) {
-//  package_domain->num_domains = package_domain->num_units;
-
     subdomain->scope            = DART_LOCALITY_SCOPE_CORE;
     subdomain->num_domains      = 1;
     subdomain->num_units        = 1;
@@ -1247,10 +1236,6 @@ dart_ret_t dart__base__locality__domain__create_package_subdomain(
            sizeof(unit_loc->hwinfo.cache_ids));
     memcpy(&subdomain->hwinfo.cache_sizes, &unit_loc->hwinfo.cache_sizes,
            sizeof(unit_loc->hwinfo.cache_sizes));
-
-    unit_loc->hwinfo.shared_mem_kb = 1000000 +
-                                     10000 * package_domain->num_units +
-                                     100 * num_separate_caches;
   }
 
   free(cache_ids);
