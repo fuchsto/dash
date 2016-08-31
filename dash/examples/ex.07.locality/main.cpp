@@ -61,6 +61,14 @@ int main(int argc, char * argv[])
     dart_domain_team_locality(
       DART_TEAM_ALL, ".", &global_domain_locality);
 
+    cout << "Hint: run using numactl, for example: "
+         << endl
+         << "  numactl --physcpubind=6,7,8,9,10,11,12,13,14,15,16,17 \\"
+         << endl
+         << "     mpirun -n 12 ./bin/ex.07.locality.mpi"
+         << endl
+         << endl;
+
     cout << ((dash::util::LocalityJSONPrinter()
               << *global_domain_locality)).str()
          << endl
