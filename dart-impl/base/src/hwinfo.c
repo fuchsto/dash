@@ -144,12 +144,12 @@ dart_ret_t dart_hwinfo(
       hw.min_cpu_mhz = info->clock;
       hw.max_cpu_mhz = info->clock;
     }
-    if (hw.num_sockets < 0) {
-      hw.num_sockets = topo->numSockets;
-    }
-    if (hw.num_numa < 0) {
-      hw.num_numa    = hw.num_sockets;
-    }
+//  if (hw.num_sockets < 0) {
+//    hw.num_sockets = topo->numSockets;
+//  }
+//  if (hw.num_numa < 0) {
+//    hw.num_numa    = hw.num_sockets;
+//  }
     if (hw.num_cores < 0) {
       hw.num_cores   = topo->numCoresPerSocket * hw.num_sockets;
     }
@@ -318,10 +318,10 @@ dart_ret_t dart_hwinfo(
   }
   hwloc_topology_destroy(topology);
   DART_LOG_TRACE("dart_hwinfo: hwloc: "
-                 "num_sockets:%d num_numa:%d "
+//               "num_sockets:%d num_numa:%d "
                  "numa_id:%d num_cores:%d core_id:%d cpu_id:d%",
-                 hw.num_sockets,
-                 hw.num_numa, hw.numa_id, hw.num_cores,
+//               hw.num_sockets, hw.num_numa,
+                 hw.numa_id, hw.num_cores,
                  hw.core_id, hw.cpu_id);
 #endif /* DART_ENABLE_HWLOC */
 
@@ -343,8 +343,10 @@ dart_ret_t dart_hwinfo(
       hw.max_cpu_mhz = papi_hwinfo->cpu_max_mhz;
     }
     DART_LOG_TRACE("dart_hwinfo: PAPI: "
-                   "num_sockets:%d num_numa:%d num_cores:%d",
-                   hw.num_sockets, hw.num_numa, hw.num_cores);
+//                 "num_sockets:%d num_numa:%d "
+                   "num_cores:%d",
+//                 hw.num_sockets, hw.num_numa,
+                   hw.num_cores);
   }
 #endif /* DART_ENABLE_PAPI */
 
@@ -411,16 +413,16 @@ dart_ret_t dart_hwinfo(
   if (hw.numa_id < 0 && hw.cpu_id >= 0) {
     hw.numa_id = numa_node_of_cpu(hw.cpu_id);
   }
-  DART_LOG_TRACE("dart_hwinfo: numalib: "
-                 "num_sockets:%d num_numa:%d numa_id:%d num_cores:%d",
-                 hw.num_sockets, hw.num_numa, hw.numa_id, hw.num_cores);
+//DART_LOG_TRACE("dart_hwinfo: numalib: "
+//               "num_sockets:%d num_numa:%d numa_id:%d num_cores:%d",
+//               hw.num_sockets, hw.num_numa, hw.numa_id, hw.num_cores);
 #endif
 
   DART_LOG_TRACE("dart_hwinfo: finished: "
-                 "num_sockets:%d num_numa:%d "
+//               "num_sockets:%d num_numa:%d "
                  "numa_id:%d cpu_id:%d, num_cores:%d "
                  "min_threads:%d max_threads:%d",
-                 hw.num_sockets, hw.num_numa,
+//               hw.num_sockets, hw.num_numa,
                  hw.numa_id, hw.cpu_id, hw.num_cores,
                  hw.min_threads, hw.max_threads);
 

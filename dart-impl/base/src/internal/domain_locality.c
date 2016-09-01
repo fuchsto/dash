@@ -1033,7 +1033,8 @@ dart_ret_t dart__base__locality__domain__create_module_subdomain(
      */
     DART_LOG_TRACE("dart__base__locality__domain__create_subdomains: "
                    "unit %d numa id: %d module numa id: %d",
-                   mu, module_unit_numa_id, subdomain->hwinfo.numa_id);
+//                 mu, module_unit_numa_id, subdomain->hwinfo.numa_id);
+                   mu, module_unit_numa_id, subdomain->relative_index);
     if (module_unit_numa_id == rel_idx) {
       ++num_numa_units;
     }
