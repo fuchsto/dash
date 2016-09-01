@@ -72,12 +72,13 @@ public:
 
 public:
 
-//static inline int NumNodes()
-//{
-//  return (_domain_loc == nullptr)
+  static inline int NumNodes()
+  {
+    return (_domain_loc == nullptr)
 //         ? -1 : std::max<int>(_domain_loc->num_nodes, 1);
-//}
-//
+           ? -1 : std::max<int>(_domain_loc->num_domains, 1);
+  }
+
 //static inline int NumSockets()
 //{
 //  return (_domain_loc == nullptr)

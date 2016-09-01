@@ -374,7 +374,7 @@ public:
 //{
 //  return (nullptr == _domain ? -1 : _domain->num_nodes);
 //}
-//
+
   inline int relative_index() const
   {
     return (nullptr == _domain ? -1 : _domain->relative_index);
