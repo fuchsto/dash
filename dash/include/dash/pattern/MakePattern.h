@@ -46,9 +46,10 @@ make_team_spec(
 //auto n_sockets    = dash::util::Locality::NumSockets();
   // Number of NUMA domains per processing node:
 //auto n_numa_dom   = dash::util::Locality::NumNUMANodes();
-  auto n_numa_dom   = uloc.num_numa();
+  auto n_numa_dom   = uloc.hwinfo().num_numa;
   // Number of cores per processing node:
-  auto n_cores      = dash::util::Locality::NumCores();
+//auto n_cores      = dash::util::Locality::NumCores();
+  auto n_cores      = uloc.hwinfo().num_cores;
 
   DASH_LOG_TRACE_VAR("dash::make_team_spec", n_nodes);
 //DASH_LOG_TRACE_VAR("dash::make_team_spec", n_sockets);

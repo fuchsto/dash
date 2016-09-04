@@ -2,7 +2,7 @@
 #define DASH__UTIL__UNIT_LOCALITY_H__INCLUDED
 
 #include <dash/util/Locality.h>
-// #include <dash/util/LocalityDomain.h>
+#include <dash/util/LocalityDomain.h>
 #include <dash/util/Config.h>
 
 #include <dash/algorithm/internal/String.h>
@@ -43,6 +43,12 @@ public:
       dart_unit_locality(
         _team->dart_id(), unit, &_unit_locality),
       DART_OK);
+
+    dart_domain_locality_t * node_locality = &_unit_locality->domain;
+    while (node_locality->scope > DART_LOCALITY_SCOPE_NODE) {
+      node_locality = node_locality->parent;
+    }
+    _node_domain = dash::util::LocalityDomain(node_locality);
   }
 
   UnitLocality(
@@ -66,6 +72,18 @@ public:
     return _unit_locality->hwinfo;
   }
 
+  inline dart_domain_locality_t & domain()
+  {
+    DASH_ASSERT(nullptr != _unit_locality);
+    return _unit_locality->domain;
+  }
+
+  inline const dart_domain_locality_t & domain() const
+  {
+    DASH_ASSERT(nullptr != _unit_locality);
+    return _unit_locality->domain;
+  }
+
   inline dash::Team & team()
   {
     if (nullptr == _team) {
@@ -79,6 +97,11 @@ public:
     return nullptr == _unit_locality
            ? DART_UNDEFINED_UNIT_ID
            : _unit_locality->unit;
+  }
+
+  inline dash::util::LocalityDomain & node_domain()
+  {
+    return _node_domain;
   }
 
   inline std::string domain_tag() const
@@ -260,8 +283,9 @@ public:
 
 private:
 
-  dash::Team             * _team          = nullptr;
-  dart_unit_locality_t   * _unit_locality = nullptr;
+  dash::Team                 * _team          = nullptr;
+  dart_unit_locality_t       * _unit_locality = nullptr;
+  dash::util::LocalityDomain   _node_domain;
 
 }; // class UnitLocality
 

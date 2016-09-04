@@ -102,18 +102,18 @@ void Locality::init()
   }
 
   if (dart_domain_team_locality(
-//      DART_TEAM_ALL, _unit_loc->domain_tag, &_domain_loc)
-        DART_TEAM_ALL, _unit_loc->domain.domain_tag, &_domain_loc)
+//      DART_TEAM_ALL, _unit_loc->domain_tag, &_team_loc)
+        DART_TEAM_ALL, _unit_loc->domain.domain_tag, &_team_loc)
       != DART_OK) {
     DASH_THROW(dash::exception::RuntimeError,
-               "Locality::init(): dart_domain_locality failed " <<
+               "Locality::init(): dart_domain_team_locality failed " <<
 //             "for domain '" << _unit_loc->domain_tag << "'");
                "for domain '" << _unit_loc->domain.domain_tag << "'");
   }
-  DASH_LOG_TRACE_VAR("dash::util::Locality::init", _domain_loc);
-  if (_domain_loc == nullptr) {
+  DASH_LOG_TRACE_VAR("dash::util::Locality::init", _team_loc);
+  if (_team_loc == nullptr) {
     DASH_THROW(dash::exception::RuntimeError,
-               "Locality::init(): dart_domain_locality returned nullptr " <<
+               "Locality::init(): dart_domain_team_locality returned 0 " <<
 //             "for domain '" << _unit_loc->domain_tag << "'");
                "for domain '" << _unit_loc->domain.domain_tag << "'");
   }
@@ -173,8 +173,8 @@ std::ostream & operator<<(
   return os;
 }
 
-dart_unit_locality_t   * Locality::_unit_loc   = nullptr;
-dart_domain_locality_t * Locality::_domain_loc = nullptr;
+dart_unit_locality_t   * Locality::_unit_loc = nullptr;
+dart_domain_locality_t * Locality::_team_loc = nullptr;
 
 static void print_domain(
   std::ostream                 & ostr,

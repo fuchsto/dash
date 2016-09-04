@@ -63,9 +63,9 @@ public:
 
   static inline int NumNodes()
   {
-    return (_domain_loc == nullptr)
-//         ? -1 : std::max<int>(_domain_loc->num_nodes, 1);
-           ? -1 : std::max<int>(_domain_loc->num_domains, 1);
+    return (_team_loc == nullptr)
+//         ? -1 : std::max<int>(_team_loc->num_nodes, 1);
+           ? -1 : std::max<int>(_team_loc->num_domains, 1);
   }
 
 
@@ -74,7 +74,7 @@ private:
 
 private:
   static dart_unit_locality_t     * _unit_loc;
-  static dart_domain_locality_t   * _domain_loc;
+  static dart_domain_locality_t   * _team_loc;
 
 };
 
