@@ -418,7 +418,7 @@ dart_ret_t dart_hwinfo(
    */
   DART_LOG_TRACE("dart_hwinfo: MIC architecture");
 
-  if (hw.num_sockets < 0) { hw.num_sockets =  1; }
+//if (hw.num_sockets < 0) { hw.num_sockets =  1; }
   if (hw.num_numa    < 0) { hw.num_numa    =  1; }
   if (hw.num_cores   < 0) { hw.num_cores   = 60; }
   if (hw.min_cpu_mhz < 0 || hw.max_cpu_mhz < 0) {
