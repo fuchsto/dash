@@ -1296,9 +1296,7 @@ dart_ret_t dart__base__locality__domain__create_package_subdomain(
       DART_OK);
     DART_LOG_TRACE("dart__base__locality__domain__create_subdomains: "
                    "setting "
-//                 "host: %s "
                    "unit %d domain_tag: %s",
-//                 subdomain->host,
                    unit_id, subdomain->domain_tag);
 //  strncpy(unit_loc->domain_tag, subdomain->domain_tag,
 //          DART_LOCALITY_DOMAIN_TAG_MAX_SIZE);
@@ -1391,9 +1389,7 @@ dart_ret_t dart__base__locality__domain__create_cache_subdomain(
         DART_OK);
       DART_LOG_TRACE("dart__base__locality__domain__create_subdomains: "
                      "setting "
-//                   "host: %s "
                      "unit %d domain_tag: %s",
-//                   subdomain->host,
                      unit_id, subdomain->domain_tag);
       strncpy(unit_loc->domain.domain_tag, subdomain->domain_tag,
               DART_LOCALITY_DOMAIN_TAG_MAX_SIZE);

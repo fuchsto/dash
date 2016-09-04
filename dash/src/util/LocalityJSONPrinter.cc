@@ -71,7 +71,8 @@ LocalityJSONPrinter & LocalityJSONPrinter::print_domain(
   *this << indent << "'scope'    : " << domain->scope << ",\n"
         << indent << "'level'    : " << domain->level << ",\n"
         << indent << "'idx'      : " << domain->relative_index << ",\n"
-        << indent << "'shmem'    : " << domain->shared_mem_kb << " KB,\n";
+        << indent << "'shmem'    : " << domain->shared_mem_kb << " KB,\n"
+        << indent << "'cores'    : " << domain->num_cores << ",\n";
 
   if (static_cast<int>(domain->scope) <
       static_cast<int>(DART_LOCALITY_SCOPE_NODE)) {
