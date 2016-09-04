@@ -127,14 +127,14 @@ LocalityJSONPrinter & LocalityJSONPrinter::print_domain(
 //                    << "'host':'"     << uloc->host       << "', "
                       << "'host':'"     << uloc->hwinfo.host       << "', "
                       << "'hwinfo':"    << uloc->hwinfo
-                      << " }";
+                      << " },\n";
     }
   } else {
 //  *this << indent << "'hwinfo'   : " << domain->hwinfo << " ";
   }
 
   if (domain->num_domains > 0) {
-    *this << ",\n";
+//  *this << ",\n";
     *this << indent << "'ndomains' : " << domain->num_domains << ",\n";
     *this << indent << "'domains'  : {\n";
 

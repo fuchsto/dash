@@ -269,7 +269,7 @@ dart_ret_t dart_hwinfo(
       }
 #endif
       else if (obj->type == HWLOC_OBJ_NODE) {
-        DART_LOG_TRACE("dart_hwinfo: hw.scopes: NODE");
+        DART_LOG_TRACE("dart_hwinfo: hw.scopes: NUMA");
         hw.scopes[hw.num_scopes].scope = DART_LOCALITY_SCOPE_NUMA;
         hw.scopes[hw.num_scopes].index = obj->logical_index;
 

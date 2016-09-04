@@ -91,10 +91,8 @@ dart_ret_t dart__base__locality__domain__init(
   loc->parent         = NULL;
   loc->num_domains    = 0;
   loc->domains        = NULL;
-//loc->num_nodes      = -1;
+  loc->num_nodes      = -1;
   loc->num_units      = -1;
-
-//dart_hwinfo_init(&(loc->hwinfo));
 
   DART_LOG_TRACE("dart__base__locality__domain_locality_init >");
   return DART_OK;
@@ -104,7 +102,7 @@ dart_ret_t dart__base__locality__domain__destruct(
   dart_domain_locality_t * domain)
 {
   DART_LOG_DEBUG("dart__base__locality__domain__destruct() "
-                 "domain(%p)", domain);
+                 "domain(%p)", (void *)domain);
 
   dart_ret_t ret = DART_OK;
 
@@ -151,7 +149,7 @@ dart_ret_t dart__base__locality__domain__destruct(
   domain->num_units   = 0;
 
   DART_LOG_DEBUG("dart__base__locality__domain__destruct > "
-                 "domain(%p)", domain);
+                 "domain(%p)", (void *)domain);
   return DART_OK;
 }
 
@@ -163,7 +161,7 @@ dart_ret_t dart__base__locality__domain__copy(
                  "domain: %s (level %d) subdomains: %d units: %d (%p = %p)",
                  domain_src->domain_tag,  domain_src->level,
                  domain_src->num_domains, domain_src->num_units,
-                 domain_dst, domain_src);
+                 (void *)domain_dst, (void *)domain_src);
   dart_ret_t ret;
 
   *domain_dst = *domain_src;
@@ -572,9 +570,6 @@ dart_ret_t dart__base__locality__domain__create_subdomains(
    *   Determine the number of sub-domains and their scope.              *
    * ------------------------------------------------------------------- */
 
-  static int block = 0;
-  while(block);
-
   dart_locality_scope_t sub_scope;
   sub_scope           = DART_LOCALITY_SCOPE_UNDEFINED;
   const char  * module_hostname;
@@ -628,6 +623,8 @@ dart_ret_t dart__base__locality__domain__create_subdomains(
           DART_LOG_DEBUG("dart__base__locality__domain__create_subdomains: "
                          "could not find units of module %s",
                          module_hostname);
+        } else {
+          domain->num_domains = num_module_numa_domains;
         }
       }
       break;
@@ -730,7 +727,7 @@ dart_ret_t dart__base__locality__domain__create_subdomains(
     DART_LOG_DEBUG("dart__base__locality__domain__create_subdomains > "
                    "domain: %p - scope: %d level: %d "
                    "subdomains: %d domain(%s) - final",
-                   domain, domain->scope, domain->level,
+                   (void *)domain, domain->scope, domain->level,
                    domain->num_domains, domain->domain_tag);
     return DART_OK;
   } else {
@@ -783,19 +780,23 @@ dart_ret_t dart__base__locality__domain__create_subdomains(
           host_topology, unit_mapping, domain, subdomain, rel_idx);
         break;
       case DART_LOCALITY_SCOPE_NODE:
+        subdomain->num_nodes        = 1;
         dart__base__locality__domain__create_node_subdomain(
           host_topology, unit_mapping, domain, subdomain, rel_idx);
         break;
       case DART_LOCALITY_SCOPE_MODULE:
+        subdomain->num_nodes        = 1;
         dart__base__locality__domain__create_module_subdomain(
           host_topology, unit_mapping, domain, subdomain, rel_idx);
         break;
       case DART_LOCALITY_SCOPE_NUMA:
+        subdomain->num_nodes        = 1;
 //      subdomain->hwinfo.num_numa  = 1;
         dart__base__locality__domain__create_numa_subdomain(
           host_topology, unit_mapping, domain, subdomain, rel_idx);
         break;
       case DART_LOCALITY_SCOPE_PACKAGE:
+        subdomain->num_nodes        = 1;
 //      subdomain->hwinfo.num_numa  = 1;
         dart__base__locality__domain__create_package_subdomain(
           host_topology, unit_mapping, domain, subdomain, rel_idx);
@@ -805,7 +806,7 @@ dart_ret_t dart__base__locality__domain__create_subdomains(
           host_topology, unit_mapping, domain, subdomain, rel_idx);
       case DART_LOCALITY_SCOPE_CORE:
 //      subdomain->hwinfo.num_numa  = 1;
-//      subdomain->num_nodes        = 1;
+        subdomain->num_nodes        = 1;
         subdomain->num_units        = 1;
         subdomain->unit_ids         = malloc(sizeof(dart_unit_t));
         subdomain->unit_ids[0]      = domain->unit_ids[rel_idx];
@@ -889,7 +890,8 @@ dart_ret_t dart__base__locality__domain__create_global_subdomain(
     DART_OK);
   /* relative sub-domain index at global scope is node id: */
 //subdomain->node_id              = rel_idx;
-//subdomain->num_nodes            = 1;
+  subdomain->relative_index       = rel_idx;
+  subdomain->num_nodes            = 1;
   subdomain->num_units            = num_node_units;
 //subdomain->hwinfo.shared_mem_kb = subdomain->hwinfo.system_memory * 1024;
   if (subdomain->num_units > 0) {
@@ -948,7 +950,7 @@ dart_ret_t dart__base__locality__domain__create_node_subdomain(
       &num_module_units,
       &num_module_numa_domains),
     DART_OK);
-//subdomain->num_nodes        = 1;
+  subdomain->num_nodes        = 1;
   subdomain->num_units        = num_module_units;
 /*
   subdomain->hwinfo.num_numa  = num_module_numa_domains;
@@ -1041,7 +1043,7 @@ dart_ret_t dart__base__locality__domain__create_module_subdomain(
     }
   }
   DART_LOG_TRACE("dart__base__locality__domain__create_subdomains: "
-                 "number of units in NUMA domain %d: %d",
+                 "number of units in NUMA domain %d: %ld",
                   rel_idx, num_numa_units);
 //subdomain->num_nodes            = 1;
 //subdomain->hwinfo.num_numa      = 1;
@@ -1110,7 +1112,7 @@ dart_ret_t dart__base__locality__domain__create_numa_subdomain(
   int num_uma_cores          = num_parent_cores / num_domains;
   int num_unbalanced_cores   = num_parent_cores -
                                (num_uma_cores * num_domains);
-//subdomain->num_nodes       = 1;
+  subdomain->num_nodes       = 1;
 //subdomain->hwinfo.num_numa = 1;
   subdomain->num_units       = num_uma_units;
 
@@ -1181,7 +1183,7 @@ dart_ret_t dart__base__locality__domain__create_package_subdomain(
                                   (num_cachedom_cores * num_domains);
   // Package at cache level 3 so package sub-domain at 2:
   int    cache_level            = 2;
-//subdomain->num_nodes          = 1;
+  subdomain->num_nodes          = 1;
 //subdomain->hwinfo.num_numa    = 1;
   subdomain->num_units          = num_cachedom_units;
 //subdomain->hwinfo.num_cores   = num_cachedom_cores;
@@ -1252,6 +1254,8 @@ dart_ret_t dart__base__locality__domain__create_package_subdomain(
                    unit_id, subdomain->domain_tag);
 //  strncpy(unit_loc->domain_tag, subdomain->domain_tag,
 //          DART_LOCALITY_DOMAIN_TAG_MAX_SIZE);
+    strncpy(unit_loc->domain.domain_tag, subdomain->domain_tag,
+            DART_LOCALITY_DOMAIN_TAG_MAX_SIZE);
 //  memcpy(&subdomain->hwinfo.cache_ids, &unit_loc->hwinfo.cache_ids,
 //         sizeof(unit_loc->hwinfo.cache_ids));
 //  memcpy(&subdomain->hwinfo.cache_sizes, &unit_loc->hwinfo.cache_sizes,
@@ -1292,7 +1296,7 @@ dart_ret_t dart__base__locality__domain__create_cache_subdomain(
   // Package at cache level 3, package cache subdomain (= cache_domain)
   // at 2, so cache sub-domain at 1:
   int    cache_level            = 2;
-//subdomain->num_nodes          = 1;
+  subdomain->num_nodes          = 1;
 //subdomain->hwinfo.num_numa    = 1;
   subdomain->num_units          = num_cachedom_units;
 //subdomain->hwinfo.num_cores   = num_cachedom_cores;
@@ -1339,12 +1343,12 @@ dart_ret_t dart__base__locality__domain__create_cache_subdomain(
         DART_OK);
       DART_LOG_TRACE("dart__base__locality__domain__create_subdomains: "
                      "setting "
-//                   "host: %s "
+                     "host: %s "
                      "unit %d domain_tag: %s",
-//                   subdomain->host,
+                     subdomain->host,
                      unit_id, subdomain->domain_tag);
-//    strncpy(unit_loc->domain_tag, subdomain->domain_tag,
-//            DART_LOCALITY_DOMAIN_TAG_MAX_SIZE);
+      strncpy(unit_loc->domain.domain_tag, subdomain->domain_tag,
+              DART_LOCALITY_DOMAIN_TAG_MAX_SIZE);
 //    memcpy(&subdomain->hwinfo.cache_ids, &unit_loc->hwinfo.cache_ids,
 //           sizeof(unit_loc->hwinfo.cache_ids));
 //    memcpy(&subdomain->hwinfo.cache_sizes, &unit_loc->hwinfo.cache_sizes,

@@ -109,7 +109,7 @@ dart_ret_t dart__base__unit_locality__create(
   }
   DART_LOG_TRACE("dart__base__unit_locality__create: unit %d of %"PRIu64": "
                  "sending %"PRIu64" bytes: "
-                 "host:%s domain:%s core_id:%d numa_id:%d nthreads:%d",
+                 "host:'%s' domain:'%s' core_id:%d numa_id:%d nthreads:%d",
                  myid, nunits, nbytes,
 //               uloc->host, uloc->domain_tag, uloc->hwinfo.cpu_id,
                  uloc->hwinfo.host, uloc->domain.domain_tag,
@@ -138,7 +138,7 @@ dart_ret_t dart__base__unit_locality__create(
   for (size_t u = 0; u < nunits; ++u) {
     dart_unit_locality_t * ulm_u = &mapping->unit_localities[u];
     DART_LOG_TRACE("dart__base__unit_locality__create: unit[%d]: "
-                   "unit:%d host:%s domain:%s "
+                   "unit:%d host:'%s' domain:'%s' "
                    "num_cores:%d core_id:%d cpu_id:%d "
                    "num_numa:%d numa_id:%d "
                    "nthreads:%d",
