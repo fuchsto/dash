@@ -300,11 +300,11 @@ public:
     return *_domain;
   }
 
-  inline std::string host() const
-  {
-    DASH_ASSERT(_domain != nullptr);
-    return _domain->host;
-  }
+//inline std::string host() const
+//{
+//  DASH_ASSERT(_domain != nullptr);
+//  return _domain->host;
+//}
 
   inline int shared_mem_kb() const
   {

@@ -70,7 +70,8 @@ LocalityJSONPrinter & LocalityJSONPrinter::print_domain(
 
   *this << indent << "'scope'    : " << domain->scope << ",\n"
         << indent << "'level'    : " << domain->level << ",\n"
-        << indent << "'idx'      : " << domain->relative_index << ",\n";
+        << indent << "'idx'      : " << domain->relative_index << ",\n"
+        << indent << "'shmem'    : " << domain->shared_mem_kb << " KB,\n";
 
   if (static_cast<int>(domain->scope) <
       static_cast<int>(DART_LOCALITY_SCOPE_NODE)) {
@@ -82,7 +83,7 @@ LocalityJSONPrinter & LocalityJSONPrinter::print_domain(
        static_cast<int>(DART_LOCALITY_SCOPE_NODE)) ||
       (static_cast<int>(domain->scope) ==
        static_cast<int>(DART_LOCALITY_SCOPE_MODULE))) {
-    *this << indent << "'host'     : '"   << domain->host    << "',\n";
+//  *this << indent << "'host'     : '"   << domain->host    << "',\n";
   }
 
   if (static_cast<int>(domain->scope) ==

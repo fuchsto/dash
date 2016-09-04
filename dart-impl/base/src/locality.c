@@ -139,7 +139,7 @@ dart_ret_t dart__base__locality__create(
   team_global_domain->domains        = NULL;
 //team_global_domain->hwinfo         = *hwinfo;
   team_global_domain->num_units      = 0;
-  team_global_domain->host[0]        = '\0';
+//team_global_domain->host[0]        = '\0';
   team_global_domain->domain_tag[0]  = '.';
   team_global_domain->domain_tag[1]  = '\0';
 
