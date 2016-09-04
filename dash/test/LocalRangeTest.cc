@@ -47,7 +47,7 @@ TEST_F(LocalRangeTest, ArrayBlockedWithOffset)
 
   dash::Array<int> array(num_elems_total, dash::BLOCKED);
 
-  LOG_MESSAGE("global index range: begin:%d end:%d",
+  LOG_MESSAGE("global index range: begin:%ld end:%ld",
               offset, offset + num_elems);
   auto l_idx_range = dash::local_index_range(
                        array.begin() + offset,
@@ -87,9 +87,10 @@ TEST_F(LocalRangeTest, View2DimRange)
   size_t num_elem_per_unit   = num_elem_total / _dash_size;
   size_t num_blocks_per_unit = num_elem_per_unit / block_size;
 
-  LOG_MESSAGE("nunits:%d elem_total:%d elem_per_unit:%d blocks_per_unit:d%",
-              _dash_size, num_elem_total,
-              num_elem_per_unit, num_blocks_per_unit);
+  LOG_MESSAGE("nunits:%ld "
+              "elem_total:%ld elem_per_unit:%ld blocks_per_unit:%ld",
+              _dash_size,
+              num_elem_total, num_elem_per_unit, num_blocks_per_unit);
 
   typedef int                                            element_t;
   typedef dash::TilePattern<2>                           pattern_t;
@@ -108,7 +109,7 @@ TEST_F(LocalRangeTest, View2DimRange)
   matrix_t matrix(pattern);
 
   int lb = 0;
-  for (auto b = 0; b < num_blocks_total; ++b) {
+  for (int b = 0; b < static_cast<int>(num_blocks_total); ++b) {
     auto g_block        = matrix.block(b);
     auto g_block_first  = g_block.begin();
     auto g_block_view   = g_block_first.viewspec();
@@ -163,7 +164,6 @@ TEST_F(LocalRangeTest, View2DimRange)
 
 TEST_F(LocalRangeTest, LargeArray)
 {
-  typedef long long     index_t;
   typedef int           element_t;
 
   // Check system memory size
@@ -172,14 +172,15 @@ TEST_F(LocalRangeTest, LargeArray)
   int  units_per_node = dash::util::Locality::NumNodes();
 
   long mb_to_byte     = 1024 * 1024;
-  long mem_host       = dash::util::Locality::SystemMemory() * mb_to_byte;
+  long mem_host       = dash::util::UnitLocality()
+                          .node_domain().shared_mem_kb() * 1024;
   long mem_total;
   long max_index;
-  if(mem_host > 0){
+  if (mem_host > 0) {
     mem_total      = ((num_units - 1) / units_per_node + 1) * mem_host;
     max_index      = (mem_total / 2) / sizeof(element_t);
   } else {
-    max_index      = 100000000000l; 
+    max_index      = 100000000000l;
   }
 
 #if 0

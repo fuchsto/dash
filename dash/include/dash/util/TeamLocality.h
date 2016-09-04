@@ -180,6 +180,11 @@ public:
     return _domain.parts();
   }
 
+  inline size_t num_nodes() const
+  {
+    return _domain.size();
+  }
+
   inline dash::Team & team()
   {
     return (nullptr == _team) ? dash::Team::Null() : *_team;

@@ -149,9 +149,11 @@ int main(int argc, char * argv[])
 
 unit_threading_t get_local_threading()
 {
+  dash::util::UnitLocality uloc;
+
   unit_threading_t ut;
-  ut.num_threads  = dash::util::Locality::NumCores();
-  ut.max_threads  = dash::util::Locality::MaxThreads();
+  ut.num_threads  = uloc.num_cores();
+  ut.max_threads  = uloc.max_threads();
   ut.hyperthreads = false;
 #ifdef DASH_ENABLE_OPENMP
   ut.openmp       = true;
@@ -164,11 +166,11 @@ unit_threading_t get_local_threading()
     ut.num_threads  = 1;
   } else if (dash::util::Config::get<bool>("DASH_MAX_SMT")) {
     // Configured to use SMT (hyperthreads):
-    ut.num_threads *= dash::util::Locality::MaxThreads();
+    ut.num_threads *= uloc.max_threads();
     ut.hyperthreads = true;
   } else {
     // Start one thread on every physical core assigned to this unit:
-    ut.num_threads *= dash::util::Locality::MinThreads();
+    ut.num_threads *= uloc.min_threads();
   }
   if (dash::util::Config::is_set("DASH_MAX_UNIT_THREADS")) {
     ut.max_threads  = dash::util::Config::get<int>(

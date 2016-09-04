@@ -208,6 +208,14 @@ public:
            ? -1 : std::max<int>(_unit_locality->hwinfo.min_cpu_mhz, 1);
   }
 
+  inline int cache_line_size(int cache_level)
+  {
+    return (_unit_locality == nullptr)
+           ? 64 : std::max<int>(
+                    _unit_locality->hwinfo.cache_line_sizes[cache_level],
+                    64);
+  }
+
   inline std::string hostname()
   {
     return (_unit_locality == nullptr) ? "" : _unit_locality->hwinfo.host;

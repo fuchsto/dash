@@ -306,6 +306,12 @@ public:
     return _domain->host;
   }
 
+  inline int shared_mem_kb() const
+  {
+    DASH_ASSERT(_domain != nullptr);
+    return _domain->shared_mem_kb;
+  }
+
   inline iterator begin()
   {
     return _begin;
@@ -380,6 +386,11 @@ public:
   inline int relative_index() const
   {
     return (nullptr == _domain ? -1 : _domain->relative_index);
+  }
+
+  inline int num_cores() const
+  {
+    return (nullptr == _domain ? -1 : _domain->num_cores);
   }
 
 private:
