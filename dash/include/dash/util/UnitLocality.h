@@ -2,7 +2,7 @@
 #define DASH__UTIL__UNIT_LOCALITY_H__INCLUDED
 
 #include <dash/util/Locality.h>
-#include <dash/util/LocalityDomain.h>
+// #include <dash/util/LocalityDomain.h>
 #include <dash/util/Config.h>
 
 #include <dash/algorithm/internal/String.h>
@@ -41,9 +41,14 @@ public:
   {
     DASH_ASSERT_RETURNS(
       dart_unit_locality(
-        team.dart_id(), unit, &_unit_locality),
+        _team->dart_id(), unit, &_unit_locality),
       DART_OK);
   }
+
+  UnitLocality(
+    dart_unit_t   unit)
+  : UnitLocality(dash::Team::All(), unit)
+  { }
 
   UnitLocality()                                 = default;
   UnitLocality(const UnitLocality &)             = default;
@@ -139,6 +144,23 @@ public:
     return dom->num_domains;
   }
 
+  inline int numa_id() const
+  {
+    return (nullptr == _unit_locality ? -1 : _unit_locality->hwinfo.numa_id);
+#if 0
+    dart_domain_locality_t * dom = &_unit_locality->domain;
+    while (dom->scope >= DART_LOCALITY_SCOPE_NUMA) {
+      dom = dom->parent;
+    }
+    return dom->relative_index;
+#endif
+  }
+
+  inline int cpu_id() const
+  {
+    return (nullptr == _unit_locality ? -1 : _unit_locality->hwinfo.cpu_id);
+  }
+
   inline int cpu_mhz() const
   {
     DASH_ASSERT(nullptr != _unit_locality);
@@ -149,6 +171,23 @@ public:
   {
     DASH_ASSERT(nullptr != _unit_locality);
     return (_unit_locality->hwinfo.max_shmem_mbps);
+  }
+
+  inline int max_cpu_mhz()
+  {
+    return (_unit_locality == nullptr)
+           ? -1 : std::max<int>(_unit_locality->hwinfo.max_cpu_mhz, 1);
+  }
+
+  inline int min_cpu_mhz()
+  {
+    return (_unit_locality == nullptr)
+           ? -1 : std::max<int>(_unit_locality->hwinfo.min_cpu_mhz, 1);
+  }
+
+  inline std::string hostname()
+  {
+    return (_unit_locality == nullptr) ? "" : _unit_locality->hwinfo.host;
   }
 
   /**

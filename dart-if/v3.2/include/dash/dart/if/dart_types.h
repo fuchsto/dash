@@ -144,6 +144,7 @@ dart_locality_scope_t;
 #define DART_LOCALITY_MAX_DOMAIN_SCOPES   ((int)( 8))
 #define DART_LOCALITY_UNIT_MAX_CPUS       ((int)(64))
 #define DART_LOCALITY_MAX_NUMA_ID         ((int)(16))
+#define DART_LOCALITY_MAX_CACHE_LEVELS    ((int)( 5))
 
 typedef struct {
     /** The domain's scope identifier. */
@@ -181,11 +182,11 @@ typedef struct
     int   max_cpu_mhz;
 
     /** Cache sizes by cache level (L1, L2, L3). */
-    int   cache_sizes[3];
+    int   cache_sizes[DART_LOCALITY_MAX_CACHE_LEVELS];
     /** Cache line sizes by cache level (L1, L2, L3). */
-    int   cache_line_sizes[3];
+    int   cache_line_sizes[DART_LOCALITY_MAX_CACHE_LEVELS];
     /** IDs of cache modules by level (L1, L2, L3), unique within domain. */
-    int   cache_ids[3];
+    int   cache_ids[DART_LOCALITY_MAX_CACHE_LEVELS];
 
     /** Minimum number of CPU threads per core. */
     int   min_threads;
@@ -399,6 +400,8 @@ struct dart_domain_locality_s
      *  subdomains are specified. */
     struct dart_domain_locality_s * domains;
 
+    /** Whether sub-domains have identical hardware configuration. */
+    int                             is_symmetric;
 
     /** Team associated with the domain. */
     dart_team_t                     team;

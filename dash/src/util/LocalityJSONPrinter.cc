@@ -14,21 +14,6 @@ namespace util {
 
 
 LocalityJSONPrinter & LocalityJSONPrinter::operator<<(
-  const typename Locality::UnitPinning & upi)
-{
-  std::ostringstream os;
-  os << "'unit_pinning' : {"
-     << "'unit':"         << upi.unit         << ", "
-     << "'host':'"        << upi.host         << "', "
-     << "'domain':"       << upi.domain       << ", "
-     << "'numa_id':"      << upi.numa_id      << ", "
-     << "'cpu_id':"       << upi.cpu_id       << ", "
-     << "'num_cores':"    << upi.num_cores    << ", "
-     << "'num_threads':"  << upi.num_threads  << " }";
-  return (*this << os.str());
-}
-
-LocalityJSONPrinter & LocalityJSONPrinter::operator<<(
   const dart_hwinfo_t & hwinfo)
 {
   std::ostringstream os;

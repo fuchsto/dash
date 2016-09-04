@@ -204,7 +204,8 @@ dart_ret_t dart__base__unit_locality__local_unit_new(
   dart_team_t             team,
   dart_unit_locality_t  * loc)
 {
-  DART_LOG_DEBUG("dart__base__unit_locality__local_unit_new() loc(%p)", loc);
+  DART_LOG_DEBUG("dart__base__unit_locality__local_unit_new() loc(%p)",
+                 (void *)loc);
   if (loc == NULL) {
     DART_LOG_ERROR("dart__base__unit_locality__local_unit_new ! null");
     return DART_ERR_INVAL;
@@ -240,7 +241,8 @@ dart_ret_t dart__base__unit_locality__local_unit_new(
   }
 #endif
 
-  DART_LOG_DEBUG("dart__base__unit_locality__local_unit_new > loc(%p)", loc);
+  DART_LOG_DEBUG("dart__base__unit_locality__local_unit_new > loc(%p)",
+                 (void *)loc);
   return DART_OK;
 }
 
@@ -250,8 +252,8 @@ dart_ret_t dart__base__unit_locality__local_unit_new(
 dart_ret_t dart__base__unit_locality__init(
   dart_unit_locality_t  * loc)
 {
-  DART_LOG_TRACE("dart__base__unit_locality__init() "
-                 "loc: %p", loc);
+  DART_LOG_TRACE("dart__base__unit_locality__init() loc: %p",
+                 (void *)loc);
   if (loc == NULL) {
     DART_LOG_ERROR("dart__base__unit_locality__init ! null");
     return DART_ERR_INVAL;

@@ -118,6 +118,7 @@ void Locality::init()
                "for domain '" << _unit_loc->domain.domain_tag << "'");
   }
 
+#if 0
   _cache_sizes[0]      = _unit_loc->hwinfo.cache_sizes[0];
   _cache_sizes[1]      = _unit_loc->hwinfo.cache_sizes[1];
   _cache_sizes[2]      = _unit_loc->hwinfo.cache_sizes[2];
@@ -134,24 +135,24 @@ void Locality::init()
   if (_cache_line_sizes[2] < 0) {
     _cache_line_sizes[2] = _cache_line_sizes[1];
   }
-
+#endif
   DASH_LOG_DEBUG("dash::util::Locality::init >");
 }
 
-std::ostream & operator<<(
-  std::ostream        & os,
-  const typename Locality::UnitPinning & upi)
-{
-  os << "dash::util::Locality::UnitPinning("
-     << "unit:"         << upi.unit         << " "
-     << "host:"         << upi.host         << " "
-     << "domain:"       << upi.domain       << " "
-     << "numa_id:"      << upi.numa_id      << " "
-     << "cpu_id:"       << upi.cpu_id       << " "
-     << "num_cores:"    << upi.num_cores    << " "
-     << "num_threads:"  << upi.num_threads  << ")";
-  return os;
-}
+//std::ostream & operator<<(
+//  std::ostream        & os,
+//  const typename Locality::UnitPinning & upi)
+//{
+//  os << "dash::util::Locality::UnitPinning("
+//     << "unit:"         << upi.unit         << " "
+//     << "host:"         << upi.host         << " "
+//     << "domain:"       << upi.domain       << " "
+//     << "numa_id:"      << upi.numa_id      << " "
+//     << "cpu_id:"       << upi.cpu_id       << " "
+//     << "num_cores:"    << upi.num_cores    << " "
+//     << "num_threads:"  << upi.num_threads  << ")";
+//  return os;
+//}
 
 std::ostream & operator<<(
   std::ostream        & os,
@@ -174,9 +175,6 @@ std::ostream & operator<<(
 
 dart_unit_locality_t   * Locality::_unit_loc   = nullptr;
 dart_domain_locality_t * Locality::_domain_loc = nullptr;
-
-std::array<int, 3> Locality::_cache_sizes;
-std::array<int, 3> Locality::_cache_line_sizes;
 
 static void print_domain(
   std::ostream                 & ostr,
