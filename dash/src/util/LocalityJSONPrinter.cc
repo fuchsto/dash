@@ -99,7 +99,8 @@ LocalityJSONPrinter & LocalityJSONPrinter::print_domain(
   }
 
   if (domain->num_units > 0) {
-    *this << indent << "'units'    : " << "[ ";
+    *this << indent << "'nunits'   : " << domain->num_units << ",\n";
+    *this << indent << "'unit_ids' : " << "[ ";
     for (int u = 0; u < domain->num_units; ++u) {
       dart_unit_t g_unit_id;
       dart_team_unit_l2g(domain->team, domain->unit_ids[u], &g_unit_id);

@@ -2,6 +2,17 @@
  * \file dash/dart/base/internal/host_topology.c
  *
  */
+
+/*
+ * Include config and first to prevent previous include without _GNU_SOURCE
+ * in included headers:
+ */
+#include <dash/dart/base/config.h>
+#ifdef DART__PLATFORM__LINUX
+#  define _GNU_SOURCE
+#  include <unistd.h>
+#endif
+
 #include <string.h>
 #include <limits.h>
 
@@ -9,9 +20,15 @@
 #include <dash/dart/if/dart_team_group.h>
 #include <dash/dart/base/internal/host_topology.h>
 #include <dash/dart/base/internal/unit_locality.h>
+#include <dash/dart/base/internal/hwloc.h>
 
 #include <dash/dart/base/logging.h>
 #include <dash/dart/base/assert.h>
+
+#ifdef DART_ENABLE_HWLOC
+#  include <hwloc.h>
+#  include <hwloc/helper.h>
+#endif
 
 
 /* ===================================================================== *
@@ -26,6 +43,93 @@ static int cmpstr_(const void * p1, const void * p2) {
  * Internal Functions                                                    *
  * ===================================================================== */
 
+dart_ret_t dart__base__host_topology__module_locations(
+  dart_module_location_t ** module_locations,
+  int                     * num_modules)
+{
+  *module_locations = NULL;
+  *num_modules      = 0;
+
+#ifdef DART_ENABLE_HWLOC
+  DART_LOG_TRACE("dart__base__host_topology__module_locations: using hwloc");
+
+  hwloc_topology_t topology;
+  hwloc_topology_init(&topology);
+  hwloc_topology_set_flags(topology,
+  /*                         HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM */
+#if HWLOC_API_VERSION < 0x00020000
+                             HWLOC_TOPOLOGY_FLAG_IO_DEVICES
+                           | HWLOC_TOPOLOGY_FLAG_IO_BRIDGES
+  /*                       | HWLOC_TOPOLOGY_FLAG_WHOLE_IO  */
+#endif
+                          );
+  hwloc_topology_load(topology);
+  DART_LOG_TRACE("dart__base__host_topology__module_locations: "
+                 "hwloc: indexing PCI devices");
+  /* Alternative: HWLOC_TYPE_DEPTH_PCI_DEVICE */
+  int n_pcidev = hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_PCI_DEVICE);
+
+  DART_LOG_TRACE("dart__base__host_topology__module_locations: "
+                 "hwloc: %d PCI devices found", n_pcidev);
+  for (int pcidev_idx = 0; pcidev_idx < n_pcidev; pcidev_idx++) {
+    hwloc_obj_t coproc_obj =
+      hwloc_get_obj_by_type(topology, HWLOC_OBJ_PCI_DEVICE, pcidev_idx);
+    if (NULL != coproc_obj) {
+      DART_LOG_TRACE("dart__base__host_topology__module_locations: "
+                     "hwloc: PCI device: (name:%s arity:%d)",
+                     coproc_obj->name, coproc_obj->arity);
+      if (strstr(coproc_obj->name, "Xeon Phi") != NULL) {
+        DART_LOG_TRACE("dart__base__host_topology__module_locations: "
+                       "hwloc: Xeon Phi device");
+        if (coproc_obj->arity > 0) {
+          for (int pd_i = 0; pd_i < coproc_obj->arity; pd_i++) {
+            hwloc_obj_t coproc_child_obj = coproc_obj->children[pd_i];
+            DART_LOG_TRACE("dart__base__host_topology__module_locations: "
+                           "hwloc: Xeon Phi child node: (name:%s arity:%d)",
+                           coproc_child_obj->name, coproc_child_obj->arity);
+            (*num_modules)++;
+            *module_locations = realloc(*module_locations,
+                                       *num_modules *
+                                         sizeof(dart_module_location_t));
+            dart_module_location_t * module_loc =
+              module_locations[(*num_modules)-1];
+
+            char * hostname     = module_loc->host;
+            char * mic_hostname = module_loc->module;
+            gethostname(hostname, DART_LOCALITY_HOST_MAX_SIZE);
+
+            char * mic_dev_name = coproc_child_obj->name;
+            strncpy(mic_hostname, hostname,     DART_LOCALITY_HOST_MAX_SIZE);
+            strncat(mic_hostname, "-",          DART_LOCALITY_HOST_MAX_SIZE);
+            strncat(mic_hostname, mic_dev_name, DART_LOCALITY_HOST_MAX_SIZE);
+            DART_LOG_TRACE("dart__base__host_topology__module_locations: "
+                           "hwloc: Xeon Phi hostname: %s", mic_hostname);
+
+            /* Get host of MIC device: */
+            hwloc_obj_t mic_host_obj =
+              hwloc_get_non_io_ancestor_obj(topology, coproc_obj);
+            if (mic_host_obj != NULL) {
+
+              module_loc->pos.scope =
+                dart__base__hwloc__obj_type_to_dart_scope(mic_host_obj->type);
+              module_loc->pos.index = mic_host_obj->logical_index;
+              DART_LOG_TRACE("dart__base__host_topology__module_locations: "
+                             "hwloc: Xeon Phi scope pos: "
+                             "(type:%d -> scope:%d idx:%d)",
+                             mic_host_obj->type,
+                             module_loc->pos.scope,
+                             module_loc->pos.index);
+            }
+          }
+        }
+      }
+    }
+  }
+  hwloc_topology_destroy(topology);
+#endif /* ifdef DART_ENABLE_HWLOC */
+  return DART_OK;
+}
+
 dart_ret_t dart__base__host_topology__create(
   char                 * hostnames[],
   dart_team_t            team,
@@ -35,6 +139,15 @@ dart_ret_t dart__base__host_topology__create(
   const int max_host_len = DART_LOCALITY_HOST_MAX_SIZE;
   size_t    num_units;
   DART_ASSERT_RETURNS(dart_team_size(team, &num_units), DART_OK);
+
+  /* TODO: Temporary for testing ----------------------------------- */
+
+  dart_module_location_t * module_locations;
+  int                      num_modules;
+  dart__base__host_topology__module_locations(
+    &module_locations, &num_modules);
+
+  /* TODO: End temporary for testing ------------------------------- */
 
   /* Sort host names to find duplicates in one pass: */
   qsort(hostnames, num_units, sizeof(char*), cmpstr_);

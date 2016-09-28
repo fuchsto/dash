@@ -16,6 +16,7 @@
 #include <dash/dart/base/assert.h>
 
 #include <dash/dart/base/internal/papi.h>
+#include <dash/dart/base/internal/hwloc.h>
 #include <dash/dart/base/internal/unit_locality.h>
 
 #include <dash/dart/base/hwinfo.h>
@@ -168,9 +169,11 @@ dart_ret_t dart_hwinfo(
   hwloc_topology_t topology;
   hwloc_topology_init(&topology);
   hwloc_topology_set_flags(topology,
-                             HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM
+  /*                         HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM */
 #if HWLOC_API_VERSION < 0x00020000
-                           | HWLOC_TOPOLOGY_FLAG_WHOLE_IO
+                             HWLOC_TOPOLOGY_FLAG_IO_DEVICES
+                           | HWLOC_TOPOLOGY_FLAG_IO_BRIDGES
+  /*                       | HWLOC_TOPOLOGY_FLAG_WHOLE_IO  */
 #endif
                           );
   hwloc_topology_load(topology);
@@ -216,65 +219,54 @@ dart_ret_t dart_hwinfo(
     DART_LOG_TRACE("dart_hwinfo: hwloc : core logical index: %d",
                    hw.core_id);
 
-    hw.num_scopes   = 0;
-    int cache_level = 0;
+    hw.num_scopes      = 0;
+    int cache_level    = 0;
     /* Use CORE object to resolve caches: */
     hwloc_obj_t obj;
     for (obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_CORE, hw.core_id);
          obj;
          obj = obj->parent) {
       int num_scopes_prev = hw.num_scopes;
+
+      if (obj->type == HWLOC_OBJ_MACHINE) { break; }
+      hw.scopes[hw.num_scopes].scope =
+        dart__base__hwloc__obj_type_to_dart_scope(obj->type);
+      hw.scopes[hw.num_scopes].index = obj->logical_index;
+      DART_LOG_TRACE("dart_hwinfo: hwloc: parent[%d] (scope:%d index:%d)",
+                     hw.num_scopes,
+                     hw.scopes[hw.num_scopes].scope,
+                     hw.scopes[hw.num_scopes].index);
+      hw.num_scopes++;
+
 #if HWLOC_API_VERSION < 0x00020000
       if (obj->type == HWLOC_OBJ_CACHE) {
-        DART_LOG_TRACE("dart_hwinfo: hw.scopes: CACHE");
-        hw.scopes[hw.num_scopes].scope = DART_LOCALITY_SCOPE_CACHE;
-        hw.scopes[hw.num_scopes].index = obj->logical_index;
-
         hw.cache_sizes[cache_level]      = obj->attr->cache.size;
         hw.cache_line_sizes[cache_level] = obj->attr->cache.linesize;
         hw.cache_ids[cache_level]        = obj->logical_index;
         cache_level++;
-        hw.num_scopes++;
       }
 #else
       if (obj->type == HWLOC_OBJ_L1CACHE) {
-        DART_LOG_TRACE("dart_hwinfo: hw.scopes: L1CACHE");
-        hw.scopes[hw.num_scopes].scope = DART_LOCALITY_SCOPE_CACHE;
-        hw.scopes[hw.num_scopes].index = obj->logical_index;
         hw.cache_sizes[0]              = obj->attr->cache.size;
         hw.cache_line_sizes[0]         = obj->attr->cache.linesize;
         hw.cache_ids[0]                = obj->logical_index;
         cache_level++;
-        hw.num_scopes++;
       }
       else if (obj->type == HWLOC_OBJ_L2CACHE) {
-        DART_LOG_TRACE("dart_hwinfo: hw.scopes: L2CACHE");
-        hw.scopes[hw.num_scopes].scope = DART_LOCALITY_SCOPE_CACHE;
-        hw.scopes[hw.num_scopes].index = obj->logical_index;
         hw.cache_sizes[1]              = obj->attr->cache.size;
         hw.cache_line_sizes[1]         = obj->attr->cache.linesize;
         hw.cache_ids[1]                = obj->logical_index;
         cache_level++;
-        hw.num_scopes++;
       }
       else if (obj->type == HWLOC_OBJ_L3CACHE) {
-        DART_LOG_TRACE("dart_hwinfo: hw.scopes: L3CACHE");
-        hw.scopes[hw.num_scopes].scope = DART_LOCALITY_SCOPE_CACHE;
-        hw.scopes[hw.num_scopes].index = obj->logical_index;
         hw.cache_sizes[2]              = obj->attr->cache.size;
         hw.cache_line_sizes[2]         = obj->attr->cache.linesize;
         hw.cache_ids[2]                = obj->logical_index;
         cache_level++;
-        hw.num_scopes++;
       }
 #endif
       else if (obj->type == HWLOC_OBJ_NODE) {
-        DART_LOG_TRACE("dart_hwinfo: hw.scopes: NUMA");
-        hw.scopes[hw.num_scopes].scope = DART_LOCALITY_SCOPE_NUMA;
-        hw.scopes[hw.num_scopes].index = obj->logical_index;
-
         hw.numa_id = obj->logical_index;
-        hw.num_scopes++;
       } else if (obj->type ==
 #if HWLOC_API_VERSION > 0x00010700
                  HWLOC_OBJ_PACKAGE
@@ -282,22 +274,10 @@ dart_ret_t dart_hwinfo(
                  HWLOC_OBJ_SOCKET
 #endif
                 ) {
-        DART_LOG_TRACE("dart_hwinfo: hw.scopes: PACKAGE");
-        hw.scopes[hw.num_scopes].scope = DART_LOCALITY_SCOPE_PACKAGE;
-        hw.scopes[hw.num_scopes].index = obj->logical_index;
-
-        hw.num_scopes++;
-      }
-
-      if (num_scopes_prev < hw.num_scopes) {
-        DART_LOG_TRACE("dart_hwinfo: hw.scopes[%d]: "
-                       "{ scope:%d index:%d }",
-                       num_scopes_prev,
-                       hw.scopes[num_scopes_prev].scope,
-                       hw.scopes[num_scopes_prev].index);
       }
     }
   }
+
   if (hw.numa_id < 0) {
     hwloc_obj_t numa_obj;
     for (numa_obj =
@@ -318,15 +298,8 @@ dart_ret_t dart_hwinfo(
 //  }
 //}
 //if (hw.num_numa < 0) {
-//  /* NOTE:
-//   * Do not use HWLOC_OBJ_NUMANODE (requires >= hwloc-1.11.0).
-//   * HWLOC_OBJ_NODE is renamed to HWLOC_OBJ_NUMANODE in recent
-//   * distribution hwloc-1.11.0 but still supported for backward
-//   * compatibility and therefore works in all versions of hwloc.
-//   * When HWLOC_OBJ_NODE is marked as deprecated, add a condition
-//   * on hwloc version here.
-//   */
-//  int n_numa_nodes = hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_NODE);
+//  int n_numa_nodes = hwloc_get_nbobjs_by_type(
+//                       topology, DART__HWLOC_OBJ_NUMANODE);
 //  if (n_numa_nodes > 0) {
 //    hw.num_numa = n_numa_nodes;
 //  }
@@ -351,15 +324,7 @@ dart_ret_t dart_hwinfo(
   }
   if(hw.numa_memory < 0) {
     hwloc_obj_t obj;
-    /* NOTE:
-     * Do not use HWLOC_OBJ_NUMANODE (requires >= hwloc-1.11.0).
-     * HWLOC_OBJ_NODE is renamed to HWLOC_OBJ_NUMANODE in recent
-     * distribution hwloc-1.11.0 but still supported for backward
-     * compatibility and therefore works in all versions of hwloc.
-     * When HWLOC_OBJ_NODE is marked as deprecated, add a condition
-     * on hwloc version here.
-     */
-    obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_NODE, 0);
+    obj = hwloc_get_obj_by_type(topology, DART__HWLOC_OBJ_NUMANODE, 0);
     if(obj != NULL) {
       hw.numa_memory = obj->memory.total_memory / BYTES_PER_MB;
     } else {
@@ -367,6 +332,7 @@ dart_ret_t dart_hwinfo(
       hw.numa_memory = hw.system_memory;
     }
   }
+
   hwloc_topology_destroy(topology);
   DART_LOG_TRACE("dart_hwinfo: hwloc: "
 //               "num_sockets:%d num_numa:%d "

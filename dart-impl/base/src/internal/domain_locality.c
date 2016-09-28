@@ -597,7 +597,7 @@ dart_ret_t dart__base__locality__domain__create_subdomains(
                        "could not get host name of node %d",
                        domain->relative_index);
       } else {
-        strcpy(domain->host, node_hostname);
+        strncpy(domain->host, node_hostname, DART_LOCALITY_HOST_MAX_SIZE);
         if (dart__base__host_topology__num_node_modules(
               host_topology,
 //            domain->host,
@@ -625,7 +625,7 @@ dart_ret_t dart__base__locality__domain__create_subdomains(
                        "could not get host name of node %d",
                        domain->parent->relative_index);
       } else {
-        strcpy(domain->host, node_hostname);
+        strncpy(domain->host, node_hostname, DART_LOCALITY_HOST_MAX_SIZE);
         if (dart__base__host_topology__node_module(
               host_topology,
 //            domain->host,

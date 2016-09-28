@@ -141,7 +141,7 @@ dart_locality_scope_t;
 
 #define DART_LOCALITY_HOST_MAX_SIZE       ((int)(30))
 #define DART_LOCALITY_DOMAIN_TAG_MAX_SIZE ((int)(32))
-#define DART_LOCALITY_MAX_DOMAIN_SCOPES   ((int)( 8))
+#define DART_LOCALITY_MAX_DOMAIN_SCOPES   ((int)(12))
 #define DART_LOCALITY_UNIT_MAX_CPUS       ((int)(64))
 #define DART_LOCALITY_MAX_NUMA_ID         ((int)(16))
 #define DART_LOCALITY_MAX_CACHE_LEVELS    ((int)( 5))
@@ -199,7 +199,7 @@ typedef struct
     /** Maximum allocatable memory per node in MB */
     int   system_memory;
 
-    /** Maximum memory per numa node in MB */
+    /** Maximum memory per numa node in MB. */
     int   numa_memory;
 
     /** Ancestor locality scopes in bottom-up hierarchical order. */
@@ -208,6 +208,19 @@ typedef struct
     int   num_scopes;
 }
 dart_hwinfo_t;
+
+typedef struct
+{
+    /** Hostname of the module's parent node */
+    char  host[DART_LOCALITY_HOST_MAX_SIZE];
+
+    /** Hostname of the module, including the parent hostname prefix. */
+    char  module[DART_LOCALITY_HOST_MAX_SIZE];
+
+    /** The module's parent scope and its relative position in the scope. */
+    dart_locality_scope_pos_t pos;
+}
+dart_module_location_t;
 
 /**
  * A domain is a group of processing entities such as cores in a specific

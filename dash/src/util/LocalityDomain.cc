@@ -502,9 +502,9 @@ dash::util::LocalityDomain::init(
   _unit_localities.clear();
 #endif
 
+  DASH_LOG_TRACE("LocalityDomain.init",
+                 "num_units:", _domain->num_units);
   if (_domain->num_units > 0) {
-    DASH_LOG_TRACE("LocalityDomain.init",
-                   "num_units:", _domain->num_units);
     _unit_ids.insert(_unit_ids.end(),
                      _domain->unit_ids,
                      _domain->unit_ids + _domain->num_units);
