@@ -649,7 +649,7 @@ dart_ret_t dart_team_create(
                    *newteam, teamid);
   }
 
-  if (*newteam != DART_TEAM_NULL) {
+  if (*newteam != DART_TEAM_NULL && dart_initialized() > 1) {
     dart__base__locality__create(*newteam);
   }
 

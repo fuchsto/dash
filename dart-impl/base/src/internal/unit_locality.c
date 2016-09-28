@@ -231,7 +231,7 @@ dart_ret_t dart__base__unit_locality__local_unit_new(
   loc->team   = team;
   loc->hwinfo = *hwinfo;
 
-#if defined(DART__BASE__LOCALITY__SIMULATE_MICS)
+#if 1 || defined(DART__BASE__LOCALITY__SIMULATE_MICS)
   /* Assigns every second unit to a MIC host name.
    * Useful for simulating a heterogeneous node-level topology
    * for debugging.
