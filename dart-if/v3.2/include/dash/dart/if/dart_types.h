@@ -375,7 +375,7 @@ dart_hwinfo_t;
 struct dart_domain_locality_s
 {
     /** Hostname of the domain's node or 0 if unspecified. */
-    char _host[DART_LOCALITY_HOST_MAX_SIZE];
+    char host[DART_LOCALITY_HOST_MAX_SIZE];
 
     /**
      * Hierarchical domain identifier, represented as dot-separated list

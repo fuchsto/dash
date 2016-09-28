@@ -71,7 +71,7 @@ LocalityJSONPrinter & LocalityJSONPrinter::print_domain(
   *this << indent << "'scope'    : " << domain->scope << ",\n"
         << indent << "'level'    : " << domain->level << ",\n"
         << indent << "'idx'      : " << domain->relative_index << ",\n"
-        << indent << "'shmem'    : " << domain->shared_mem_kb << " KB,\n"
+        << indent << "'shmem'    : " << domain->shared_mem_kb << ",\n"
         << indent << "'cores'    : " << domain->num_cores << ",\n";
 
   if (static_cast<int>(domain->scope) <
@@ -84,7 +84,7 @@ LocalityJSONPrinter & LocalityJSONPrinter::print_domain(
        static_cast<int>(DART_LOCALITY_SCOPE_NODE)) ||
       (static_cast<int>(domain->scope) ==
        static_cast<int>(DART_LOCALITY_SCOPE_MODULE))) {
-//  *this << indent << "'host'     : '"   << domain->host    << "',\n";
+    *this << indent << "'host'     : '"   << domain->host  << "',\n";
   }
 
   if (static_cast<int>(domain->scope) ==
@@ -118,18 +118,17 @@ LocalityJSONPrinter & LocalityJSONPrinter::print_domain(
       dart_unit_locality_t * uloc;
       dart_unit_locality(team, unit_id, &uloc);
       dart_team_unit_l2g(uloc->team, unit_id, &unit_gid);
+
       *this << indent << "'unit_id'  : { "
                       << "'local_id':"  << uloc->unit << ", "
                       << "'team':"      << uloc->team << ", "
                       << "'global_id':" << unit_gid
                       << " },\n"
             << indent << "'unit_loc' : { "
-//                    << "'domain':'"   << uloc->domain_tag << "', "
                       << "'domain':'"   << uloc->domain.domain_tag << "', "
-//                    << "'host':'"     << uloc->host       << "', "
                       << "'host':'"     << uloc->hwinfo.host       << "', "
                       << "'hwinfo':"    << uloc->hwinfo
-                      << " },\n";
+                      << " }\n";
     }
   } else {
 //  *this << indent << "'hwinfo'   : " << domain->hwinfo << " ";
