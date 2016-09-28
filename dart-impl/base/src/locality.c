@@ -104,6 +104,20 @@ dart_ret_t dart__base__locality__finalize()
  * \c dart__base__locality__unit_mapping_[team] with a capacity for
  * \c DART__BASE__LOCALITY__MAX_TEAM_DOMAINS teams.
  *
+ * Outline of the locality initialization procedure:
+ *
+ * 1. All units collect their local hardware locality information
+ *    -> dart_hwinfo_t
+ *
+ * 2. All-to-all exchange of hardware locality data
+ *    -> dart_unit_mapping_t { unit, team, hwinfo, domain }
+ *
+ * 3. Construct host topology from unit mapping data
+ *    -> dart_host_topology_t
+ *
+ * 4. Initialize locality domain hierarchy from unit mapping data and
+ *    host topology
+ *    -> dart_domain_locality_t
  */
 dart_ret_t dart__base__locality__create(
   dart_team_t team)
@@ -118,9 +132,6 @@ dart_ret_t dart__base__locality__create(
     NULL == dart__base__locality__unit_mapping_[team],
     "dash__base__locality__create(): "
     "locality data of team is already initialized");
-
-//dart_hwinfo_t * hwinfo = malloc(sizeof(dart_hwinfo_t));
-//DART_ASSERT_RETURNS(dart_hwinfo(hwinfo), DART_OK);
 
   dart_domain_locality_t * team_global_domain =
     malloc(sizeof(dart_domain_locality_t));
@@ -137,9 +148,8 @@ dart_ret_t dart__base__locality__create(
   team_global_domain->parent         = NULL;
   team_global_domain->num_domains    = 0;
   team_global_domain->domains        = NULL;
-//team_global_domain->hwinfo         = *hwinfo;
   team_global_domain->num_units      = 0;
-//team_global_domain->host[0]        = '\0';
+  team_global_domain->host[0]        = '\0';
   team_global_domain->domain_tag[0]  = '.';
   team_global_domain->domain_tag[1]  = '\0';
 
@@ -161,26 +171,11 @@ dart_ret_t dart__base__locality__create(
     DART_OK);
   dart__base__locality__unit_mapping_[team] = unit_mapping;
 
-  /* Copy host names of all units into array:
-   */
-  const int max_host_len = DART_LOCALITY_HOST_MAX_SIZE;
-  DART_LOG_TRACE("dart__base__locality__create: copying host names");
-  char ** hosts = malloc(sizeof(char *) * num_units);
-  for (size_t u = 0; u < num_units; ++u) {
-    hosts[u] = malloc(sizeof(char) * max_host_len);
-    dart_unit_locality_t * ul;
-    DART_ASSERT_RETURNS(
-      dart__base__unit_locality__at(unit_mapping, u, &ul),
-      DART_OK);
-    strncpy(hosts[u], ul->hwinfo.host, max_host_len);
-  }
-
   /* Resolve host topology from the unit's host names:
    */
-  dart_host_topology_t * topo = malloc(sizeof(dart_host_topology_t));
+  dart_host_topology_t * topo;
   DART_ASSERT_RETURNS(
-    dart__base__host_topology__create(
-      hosts, team, unit_mapping, topo),
+    dart__base__host_topology__create(unit_mapping, &topo),
     DART_OK);
   dart__base__locality__host_topology_[team] = topo;
   size_t num_nodes = topo->num_nodes;

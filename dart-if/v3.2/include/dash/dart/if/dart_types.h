@@ -155,6 +155,12 @@ typedef struct {
 dart_locality_scope_pos_t;
 
 /**
+ * Hardware locality information for a single locality domain.
+ *
+ * Note that \c dart_domain_locality_t must have static size as it is
+ * used for an all-to-all exchange of locality data across all units
+ * using \c dart_allgather.
+ *
  * \ingroup DartTypes
  */
 typedef struct
@@ -437,6 +443,10 @@ typedef struct dart_domain_locality_s
  * Locality and topology information of a single unit.
  * Processing entities grouped in a single unit are homogenous.
  * Each unit is a member of one specific locality domain.
+ *
+ * Note that \c dart_unit_locality_t must have static size as it is
+ * used for an all-to-all exchange of locality data across all units
+ * using \c dart_allgather.
  *
  * \ingroup DartTypes
  */

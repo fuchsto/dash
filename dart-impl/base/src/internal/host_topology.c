@@ -131,34 +131,47 @@ dart_ret_t dart__base__host_topology__module_locations(
 }
 
 dart_ret_t dart__base__host_topology__create(
-  char                 * hostnames[],
-  dart_team_t            team,
-  dart_unit_mapping_t  * unit_mapping,
-  dart_host_topology_t * topo)
+  dart_unit_mapping_t   * unit_mapping,
+  dart_host_topology_t ** host_topology)
 {
-  const int max_host_len = DART_LOCALITY_HOST_MAX_SIZE;
-  size_t    num_units;
+  *host_topology   = NULL;
+  dart_team_t team = unit_mapping->team;
+  size_t num_units;
+
+  DART_LOG_TRACE("dart__base__host_topology__create: team:%d", team);
+
   DART_ASSERT_RETURNS(dart_team_size(team, &num_units), DART_OK);
+  DART_ASSERT_MSG(num_units == unit_mapping->num_units,
+                  "Number of units in mapping differs from team size");
 
-  /* TODO: Temporary for testing ----------------------------------- */
+  /* Copy host names of all units into array:
+   */
+  const int max_host_len = DART_LOCALITY_HOST_MAX_SIZE;
+  DART_LOG_TRACE("dart__base__locality__create: copying host names");
+  char ** hostnames = malloc(sizeof(char *) * num_units);
+  for (size_t u = 0; u < num_units; ++u) {
+    hostnames[u] = malloc(sizeof(char) * max_host_len);
+    dart_unit_locality_t * ul;
+    DART_ASSERT_RETURNS(
+      dart__base__unit_locality__at(unit_mapping, u, &ul),
+      DART_OK);
+    strncpy(hostnames[u], ul->hwinfo.host, max_host_len);
+  }
 
-  dart_module_location_t * module_locations;
-  int                      num_modules;
-  dart__base__host_topology__module_locations(
-    &module_locations, &num_modules);
+  dart_host_topology_t * topo = malloc(sizeof(dart_host_topology_t));
 
-  /* TODO: End temporary for testing ------------------------------- */
-
-  /* Sort host names to find duplicates in one pass: */
+  /*
+   * Find unique host names in array 'hostnames' and count units per
+   * host in same pass:
+   */
+  DART_LOG_TRACE("dart__base__host_topology__init: "
+                 "filtering host names of %ld units", num_units);
   qsort(hostnames, num_units, sizeof(char*), cmpstr_);
-  /* Find unique host names in array 'hosts': */
   size_t last_host_idx  = 0;
   /* Maximum number of units mapped to a single host: */
   int    max_host_units = 0;
   /* Number of units mapped to current host: */
   int    num_host_units = 0;
-  DART_LOG_TRACE("dart__base__host_topology__init: "
-                 "filtering host names of %ld units", num_units);
   for (size_t u = 0; u < num_units; ++u) {
     ++num_host_units;
     if (u == last_host_idx) { continue; }
@@ -234,6 +247,7 @@ dart_ret_t dart__base__host_topology__create(
     DART_LOG_TRACE("dart__base__host_topology__init: "
                    "found %d NUMA domains on host %s",
                    node_units->num_numa, hostnames[h]);
+
 #if 0
     if (node_units->num_numa < 1) {
       node_units->num_numa = 1;
@@ -257,8 +271,65 @@ dart_ret_t dart__base__host_topology__create(
       DART_ASSERT(node_units->units != NULL);
     }
   }
+
+  /*
+   * Initiate all-to-all exchange of module locations like Xeon Phi
+   * hostnames and their assiocated NUMA domain in their parent node.
+   *
+   * Select one leader unit per node for communication:
+   */
+  dart_unit_locality_t * my_uloc;
+  dart_unit_t            my_id;
+  dart_unit_t            leader_unit_id;
+  DART_ASSERT_RETURNS(
+    dart_team_myid(unit_mapping->team, &my_id),
+    DART_OK);
+  DART_ASSERT_RETURNS(
+    dart__base__unit_locality__at(
+      unit_mapping, my_id, &my_uloc),
+    DART_OK);
+  for (int h = 0; h < num_hosts; ++h) {
+    /* Get unit ids at local unit's host */
+    if (strncmp(my_uloc->hwinfo.host, hostnames[h], max_host_len) == 0) {
+      dart_node_units_t * node_units = &topo->node_units[h];
+      /* Select first unit id at local host as leader: */
+      leader_unit_id = node_units->units[0];
+      break;
+    }
+  }
+  DART_LOG_TRACE("dart__base__host_topology__init: "
+                 "leader unit on host %s: %d",
+                 my_uloc->hwinfo.host, leader_unit_id);
+  /*
+   * TODO: Find method to reduce communication to leaders
+   */
+  if (1 || my_id == leader_unit_id) {
+    dart_module_location_t * module_locations;
+    int                      num_modules;
+    dart__base__host_topology__module_locations(
+      &module_locations, &num_modules);
+    for (int m = 0; m < num_modules; ++m) {
+      /* iterate modules in outer loop to short-circuit for num_modules = 0 */
+      for (int h = 0; h < num_hosts; ++h) {
+        if (strncmp(module_locations[m].module, hostnames[h], max_host_len)
+            == 0) {
+          DART_LOG_TRACE("dart__base__host_topology__init: "
+                         "module %s located at parent host %s "
+                         "in scope:%d at rel.idx:d%",
+                         module_locations[m].module,
+                         module_locations[m].host,
+                         module_locations[m].pos.scope,
+                         module_locations[m].pos.index);
+          dart_node_units_t * module_node_units = &topo->node_units[h];
+          strncpy(module_node_units->parent, module_locations[m].host,
+                  DART_LOCALITY_HOST_MAX_SIZE);
+        }
+      }
+    }
+  }
+
   topo->num_hosts  = num_hosts;
-//topo->host_names = (char **)(realloc(hostnames, num_hosts));
+//topo->host_names = (char **)(realloc(hostnames, num_hosts * sizeof(char*)));
   topo->host_names = hostnames;
   DART_ASSERT(topo->host_names != NULL);
 
@@ -333,6 +404,7 @@ dart_ret_t dart__base__host_topology__create(
                    "hosts: %d nodes: %d modules: %d",
                    topo->num_hosts, topo->num_nodes, num_modules);
   }
+  *host_topology = topo;
   return DART_OK;
 }
 

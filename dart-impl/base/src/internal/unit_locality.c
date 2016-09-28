@@ -22,6 +22,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <sched.h>
+#include <string.h>
 
 #ifdef DART_ENABLE_LIKWID
 #  include <likwid.h>
@@ -94,6 +95,7 @@ dart_ret_t dart__base__unit_locality__create(
 
   dart_unit_mapping_t * mapping = malloc(sizeof(dart_unit_mapping_t));
   mapping->num_units            = nunits;
+  mapping->team                 = team;
 
   size_t nbytes = sizeof(dart_unit_locality_t);
 
@@ -111,7 +113,6 @@ dart_ret_t dart__base__unit_locality__create(
                  "sending %"PRIu64" bytes: "
                  "host:'%s' domain:'%s' core_id:%d numa_id:%d nthreads:%d",
                  myid, nunits, nbytes,
-//               uloc->host, uloc->domain_tag, uloc->hwinfo.cpu_id,
                  uloc->hwinfo.host, uloc->domain.domain_tag,
                  uloc->hwinfo.cpu_id, uloc->hwinfo.numa_id,
                  uloc->hwinfo.max_threads);
@@ -143,7 +144,6 @@ dart_ret_t dart__base__unit_locality__create(
                    "num_numa:%d numa_id:%d "
                    "nthreads:%d",
                    (int)(u), ulm_u->unit,
-//                 ulm_u->host, ulm_u->domain_tag,
                    ulm_u->hwinfo.host, ulm_u->domain.domain_tag,
                    ulm_u->hwinfo.num_cores, ulm_u->hwinfo.core_id,
                    ulm_u->hwinfo.cpu_id,
@@ -237,7 +237,7 @@ dart_ret_t dart__base__unit_locality__local_unit_new(
    * for debugging.
    */
   if (myid % 2 == 1) {
-    strncpy(loc->hwinfo.host + strlen(loc->hwinfo.host), "-mic0", 5);
+    strncat(loc->hwinfo.host, "-mic0", 5);
   }
 #endif
 

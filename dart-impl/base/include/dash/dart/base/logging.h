@@ -6,9 +6,13 @@
 #ifndef DART__BASE__LOGGING_H__
 #define DART__BASE__LOGGING_H__
 
+#include <dash/dart/base/config.h>
+#ifdef DART__PLATFORM__LINUX
+#  define _GNU_SOURCE
+#endif
+#include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <string.h>
 #include <stdio.h>
 
 #include <dash/dart/if/dart_types.h>
