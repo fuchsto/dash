@@ -58,7 +58,7 @@
  * Private Functions                                                        *
  * ======================================================================== */
 
-dart_ret_t dart__base__unit_locality__unit_locality_init(
+dart_ret_t dart__base__unit_locality__init(
   dart_unit_locality_t  * loc);
 
 dart_ret_t dart__base__unit_locality__local_unit_new(
@@ -109,10 +109,12 @@ dart_ret_t dart__base__unit_locality__create(
   }
   DART_LOG_TRACE("dart__base__unit_locality__create: unit %d of %"PRIu64": "
                  "sending %"PRIu64" bytes: "
-                 "host:%s domain:%s core_id:%d numa_id:%d nthreads:%d",
+                 "host:'%s' domain:'%s' core_id:%d numa_id:%d nthreads:%d",
                  myid, nunits, nbytes,
-                 uloc->host, uloc->domain_tag, uloc->hwinfo.cpu_id,
-                 uloc->hwinfo.numa_id, uloc->hwinfo.max_threads);
+//               uloc->host, uloc->domain_tag, uloc->hwinfo.cpu_id,
+                 uloc->hwinfo.host, uloc->domain.domain_tag,
+                 uloc->hwinfo.cpu_id, uloc->hwinfo.numa_id,
+                 uloc->hwinfo.max_threads);
 
   mapping->unit_localities = (dart_unit_locality_t *)(
                                 malloc(nunits * nbytes));
@@ -136,12 +138,15 @@ dart_ret_t dart__base__unit_locality__create(
   for (size_t u = 0; u < nunits; ++u) {
     dart_unit_locality_t * ulm_u = &mapping->unit_localities[u];
     DART_LOG_TRACE("dart__base__unit_locality__create: unit[%d]: "
-                   "unit:%d host:%s domain:%s "
-                   "num_cores:%d cpu_id:%d "
+                   "unit:%d host:'%s' domain:'%s' "
+                   "num_cores:%d core_id:%d cpu_id:%d "
                    "num_numa:%d numa_id:%d "
                    "nthreads:%d",
-                   u, ulm_u->unit, ulm_u->host, ulm_u->domain_tag,
-                   ulm_u->hwinfo.num_cores, ulm_u->hwinfo.cpu_id,
+                   (int)(u), ulm_u->unit,
+//                 ulm_u->host, ulm_u->domain_tag,
+                   ulm_u->hwinfo.host, ulm_u->domain.domain_tag,
+                   ulm_u->hwinfo.num_cores, ulm_u->hwinfo.core_id,
+                   ulm_u->hwinfo.cpu_id,
                    ulm_u->hwinfo.num_numa, ulm_u->hwinfo.numa_id,
                    ulm_u->hwinfo.max_threads);
   }
@@ -199,7 +204,8 @@ dart_ret_t dart__base__unit_locality__local_unit_new(
   dart_team_t             team,
   dart_unit_locality_t  * loc)
 {
-  DART_LOG_DEBUG("dart__base__unit_locality__local_unit_new() loc(%p)", loc);
+  DART_LOG_DEBUG("dart__base__unit_locality__local_unit_new() loc(%p)",
+                 (void *)loc);
   if (loc == NULL) {
     DART_LOG_ERROR("dart__base__unit_locality__local_unit_new ! null");
     return DART_ERR_INVAL;
@@ -207,7 +213,7 @@ dart_ret_t dart__base__unit_locality__local_unit_new(
   dart_unit_t myid = DART_UNDEFINED_UNIT_ID;
 
   DART_ASSERT_RETURNS(
-    dart__base__unit_locality__unit_locality_init(loc),
+    dart__base__unit_locality__init(loc),
     DART_OK);
   DART_ASSERT_RETURNS(
     dart_team_myid(team, &myid),
@@ -215,10 +221,6 @@ dart_ret_t dart__base__unit_locality__local_unit_new(
 
   dart_hwinfo_t * hwinfo = malloc(sizeof(dart_hwinfo_t));
   DART_ASSERT_RETURNS(dart_hwinfo(hwinfo), DART_OK);
-
-  /* Domain tag is unknown at this point, initialize with global domain: */
-  strncpy(loc->domain_tag, ".", 1);
-  loc->domain_tag[1] = '\0';
 
   dart_domain_locality_t * dloc;
   DART_ASSERT_RETURNS(
@@ -229,49 +231,40 @@ dart_ret_t dart__base__unit_locality__local_unit_new(
   loc->team   = team;
   loc->hwinfo = *hwinfo;
 
-  char hostname[DART_LOCALITY_HOST_MAX_SIZE];
-  gethostname(hostname, DART_LOCALITY_HOST_MAX_SIZE);
-  strncpy(loc->host, hostname, DART_LOCALITY_HOST_MAX_SIZE);
-
 #if defined(DART__BASE__LOCALITY__SIMULATE_MICS)
   /* Assigns every second unit to a MIC host name.
    * Useful for simulating a heterogeneous node-level topology
    * for debugging.
    */
   if (myid % 2 == 1) {
-    strncpy(loc->host + strlen(hostname), "-mic0", 5);
+    strncpy(loc->hwinfo.host + strlen(loc->hwinfo.host), "-mic0", 5);
   }
 #endif
 
-  DART_LOG_DEBUG("dart__base__unit_locality__local_unit_new > loc(%p)", loc);
+  DART_LOG_DEBUG("dart__base__unit_locality__local_unit_new > loc(%p)",
+                 (void *)loc);
   return DART_OK;
 }
 
 /**
  * Default constructor of dart_unit_locality_t.
  */
-dart_ret_t dart__base__unit_locality__unit_locality_init(
+dart_ret_t dart__base__unit_locality__init(
   dart_unit_locality_t  * loc)
 {
-  DART_LOG_TRACE("dart__base__unit_locality__unit_locality_init() "
-                 "loc: %p", loc);
+  DART_LOG_TRACE("dart__base__unit_locality__init() loc: %p",
+                 (void *)loc);
   if (loc == NULL) {
-    DART_LOG_ERROR("dart__base__unit_locality__unit_locality_init ! null");
+    DART_LOG_ERROR("dart__base__unit_locality__init ! null");
     return DART_ERR_INVAL;
   }
-  loc->unit                  = DART_UNDEFINED_UNIT_ID;
-  loc->team                  = DART_UNDEFINED_TEAM_ID;
-  loc->domain_tag[0]         = '\0';
-  loc->host[0]               = '\0';
-  loc->hwinfo.numa_id        = -1;
-  loc->hwinfo.cpu_id         = -1;
-  loc->hwinfo.num_cores      = -1;
-  loc->hwinfo.min_threads    = -1;
-  loc->hwinfo.max_threads    = -1;
-  loc->hwinfo.max_cpu_mhz    = -1;
-  loc->hwinfo.min_cpu_mhz    = -1;
-  loc->hwinfo.max_shmem_mbps = -1;
-  DART_LOG_TRACE("dart__base__unit_locality__unit_locality_init >");
+
+  loc->unit = DART_UNDEFINED_UNIT_ID;
+  loc->team = DART_UNDEFINED_TEAM_ID;
+
+  dart_hwinfo_init(&loc->hwinfo);
+
+  DART_LOG_TRACE("dart__base__unit_locality__init >");
   return DART_OK;
 }
 

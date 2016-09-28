@@ -99,7 +99,7 @@ dash::util::LocalityDomain::LocalityDomain(
   const dash::util::LocalityDomain & other
 ) : _domain_tag(other._domain_tag),
     _unit_ids(other._unit_ids),
-    _unit_localities(other._unit_localities),
+//  _unit_localities(other._unit_localities),
     _group_domain_tags(other._group_domain_tags)
 {
   DASH_LOG_TRACE_VAR("LocalityDomain(other)()", other._domain_tag);
@@ -151,7 +151,7 @@ dash::util::LocalityDomain::operator=(
 
   _is_owner          = other._is_owner;
   _unit_ids          = other._unit_ids;
-  _unit_localities   = other._unit_localities;
+//_unit_localities   = other._unit_localities;
   _domain_tag        = other._domain_tag;
   _group_domain_tags = other._group_domain_tags;
 
@@ -498,7 +498,9 @@ dash::util::LocalityDomain::init(
   }
 
   _unit_ids.clear();
+#if 0
   _unit_localities.clear();
+#endif
 
   if (_domain->num_units > 0) {
     DASH_LOG_TRACE("LocalityDomain.init",
@@ -508,6 +510,7 @@ dash::util::LocalityDomain::init(
                      _domain->unit_ids + _domain->num_units);
   }
 
+#if 0
   if (nullptr == _parent) {
     DASH_LOG_TRACE("LocalityDomain.init",
                    "root domain, get unit locality descriptors");
@@ -522,6 +525,7 @@ dash::util::LocalityDomain::init(
       );
     }
   }
+#endif
 
   _begin = iterator(*this, 0);
   _end   = iterator(*this, _domain->num_domains);

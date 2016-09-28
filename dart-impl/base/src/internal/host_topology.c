@@ -14,17 +14,17 @@
 #include <dash/dart/base/assert.h>
 
 
-/* ======================================================================== *
- * Private Functions                                                        *
- * ======================================================================== */
+/* ===================================================================== *
+ * Private Functions                                                     *
+ * ===================================================================== */
 
 static int cmpstr_(const void * p1, const void * p2) {
   return strcmp(* (char * const *) p1, * (char * const *) p2);
 }
 
-/* ======================================================================== *
- * Internal Functions                                                       *
- * ======================================================================== */
+/* ===================================================================== *
+ * Internal Functions                                                    *
+ * ===================================================================== */
 
 dart_ret_t dart__base__host_topology__create(
   char                 * hostnames[],
@@ -45,7 +45,7 @@ dart_ret_t dart__base__host_topology__create(
   /* Number of units mapped to current host: */
   int    num_host_units = 0;
   DART_LOG_TRACE("dart__base__host_topology__init: "
-                 "filtering host names of %d units", num_units);
+                 "filtering host names of %ld units", num_units);
   for (size_t u = 0; u < num_units; ++u) {
     ++num_host_units;
     if (u == last_host_idx) { continue; }
@@ -77,7 +77,7 @@ dart_ret_t dart__base__host_topology__create(
   int num_hosts = last_host_idx + 1;
   DART_LOG_TRACE("dart__base__host_topology__init: number of hosts: %d",
                  num_hosts);
-  DART_LOG_TRACE("dart__base__host_topology__init: maximum number of units "
+  DART_LOG_TRACE("dart__base__host_topology__init: max. number of units "
                  "mapped to a hosts: %d", max_host_units);
 
   /* Map units to hosts: */
@@ -100,7 +100,7 @@ dart_ret_t dart__base__host_topology__create(
       DART_ASSERT_RETURNS(
         dart__base__unit_locality__at(unit_mapping, u, &ul),
         DART_OK);
-      if (strncmp(ul->host, hostnames[h], max_host_len) == 0) {
+      if (strncmp(ul->hwinfo.host, hostnames[h], max_host_len) == 0) {
         /* Unit is local to host at index h: */
         node_units->units[node_units->num_units] = ul->unit;
         node_units->num_units++;
@@ -108,7 +108,7 @@ dart_ret_t dart__base__host_topology__create(
         int unit_numa_id = ul->hwinfo.numa_id;
 
         DART_LOG_TRACE("dart__base__host_topology__init: "
-                       "mapping unit %d to %s, NUMA id: %d",
+                       "mapping unit %ld to host '%s', NUMA id: %d",
                        u, hostnames[h], unit_numa_id);
         if (unit_numa_id >= 0) {
           if (numa_ids[unit_numa_id] == 0) {

@@ -41,8 +41,10 @@ std::ostream & operator<<(
   std::ostringstream ss;
   ss << "dart_unit_locality_t("
      <<   "unit:"      << unit_loc.unit               << " "
-     <<   "domain:'"   << unit_loc.domain_tag         << "' "
-     <<   "host:'"     << unit_loc.host               << "' "
+//   <<   "domain:'"   << unit_loc.domain_tag         << "' "
+     <<   "domain:'"   << unit_loc.domain.domain_tag  << "' "
+//   <<   "host:'"     << unit_loc.host               << "' "
+     <<   "host:'"     << unit_loc.hwinfo.host        << "' "
      <<   "numa_id:'"  << unit_loc.hwinfo.numa_id     << "' "
      <<   "core_id:"   << unit_loc.hwinfo.cpu_id      << " "
      <<   "n_cores:"   << unit_loc.hwinfo.num_cores   << " "
@@ -100,25 +102,29 @@ void Locality::init()
   }
 
   if (dart_domain_team_locality(
-        DART_TEAM_ALL, _unit_loc->domain_tag, &_domain_loc)
+//      DART_TEAM_ALL, _unit_loc->domain_tag, &_team_loc)
+        DART_TEAM_ALL, _unit_loc->domain.domain_tag, &_team_loc)
       != DART_OK) {
     DASH_THROW(dash::exception::RuntimeError,
-               "Locality::init(): dart_domain_locality failed " <<
-               "for domain '" << _unit_loc->domain_tag << "'");
+               "Locality::init(): dart_domain_team_locality failed " <<
+//             "for domain '" << _unit_loc->domain_tag << "'");
+               "for domain '" << _unit_loc->domain.domain_tag << "'");
   }
-  DASH_LOG_TRACE_VAR("dash::util::Locality::init", _domain_loc);
-  if (_domain_loc == nullptr) {
+  DASH_LOG_TRACE_VAR("dash::util::Locality::init", _team_loc);
+  if (_team_loc == nullptr) {
     DASH_THROW(dash::exception::RuntimeError,
-               "Locality::init(): dart_domain_locality returned nullptr " <<
-               "for domain '" << _unit_loc->domain_tag << "'");
+               "Locality::init(): dart_domain_team_locality returned 0 " <<
+//             "for domain '" << _unit_loc->domain_tag << "'");
+               "for domain '" << _unit_loc->domain.domain_tag << "'");
   }
 
-  _cache_sizes[0]      = _domain_loc->hwinfo.cache_sizes[0];
-  _cache_sizes[1]      = _domain_loc->hwinfo.cache_sizes[1];
-  _cache_sizes[2]      = _domain_loc->hwinfo.cache_sizes[2];
-  _cache_line_sizes[0] = _domain_loc->hwinfo.cache_line_sizes[0];
-  _cache_line_sizes[1] = _domain_loc->hwinfo.cache_line_sizes[1];
-  _cache_line_sizes[2] = _domain_loc->hwinfo.cache_line_sizes[2];
+#if 0
+  _cache_sizes[0]      = _unit_loc->hwinfo.cache_sizes[0];
+  _cache_sizes[1]      = _unit_loc->hwinfo.cache_sizes[1];
+  _cache_sizes[2]      = _unit_loc->hwinfo.cache_sizes[2];
+  _cache_line_sizes[0] = _unit_loc->hwinfo.cache_line_sizes[0];
+  _cache_line_sizes[1] = _unit_loc->hwinfo.cache_line_sizes[1];
+  _cache_line_sizes[2] = _unit_loc->hwinfo.cache_line_sizes[2];
 
   if (_cache_line_sizes[0] < 0) {
     _cache_line_sizes[0] = 64;
@@ -129,24 +135,24 @@ void Locality::init()
   if (_cache_line_sizes[2] < 0) {
     _cache_line_sizes[2] = _cache_line_sizes[1];
   }
-
+#endif
   DASH_LOG_DEBUG("dash::util::Locality::init >");
 }
 
-std::ostream & operator<<(
-  std::ostream        & os,
-  const typename Locality::UnitPinning & upi)
-{
-  os << "dash::util::Locality::UnitPinning("
-     << "unit:"         << upi.unit         << " "
-     << "host:"         << upi.host         << " "
-     << "domain:"       << upi.domain       << " "
-     << "numa_id:"      << upi.numa_id      << " "
-     << "cpu_id:"       << upi.cpu_id       << " "
-     << "num_cores:"    << upi.num_cores    << " "
-     << "num_threads:"  << upi.num_threads  << ")";
-  return os;
-}
+//std::ostream & operator<<(
+//  std::ostream        & os,
+//  const typename Locality::UnitPinning & upi)
+//{
+//  os << "dash::util::Locality::UnitPinning("
+//     << "unit:"         << upi.unit         << " "
+//     << "host:"         << upi.host         << " "
+//     << "domain:"       << upi.domain       << " "
+//     << "numa_id:"      << upi.numa_id      << " "
+//     << "cpu_id:"       << upi.cpu_id       << " "
+//     << "num_cores:"    << upi.num_cores    << " "
+//     << "num_threads:"  << upi.num_threads  << ")";
+//  return os;
+//}
 
 std::ostream & operator<<(
   std::ostream        & os,
@@ -155,7 +161,7 @@ std::ostream & operator<<(
   os << "dart_hwinfo_t("
      << "numa_id:"     << hwinfo.numa_id     << " "
      << "num_numa:"    << hwinfo.num_numa    << " "
-     << "num_sockets:" << hwinfo.num_sockets << " "
+//   << "num_sockets:" << hwinfo.num_sockets << " "
      << "num_cores:"   << hwinfo.num_cores   << " "
      << "cpu_id:"      << hwinfo.cpu_id      << " "
      << "threads("     << hwinfo.min_threads << "..."
@@ -167,11 +173,8 @@ std::ostream & operator<<(
   return os;
 }
 
-dart_unit_locality_t   * Locality::_unit_loc   = nullptr;
-dart_domain_locality_t * Locality::_domain_loc = nullptr;
-
-std::array<int, 3> Locality::_cache_sizes;
-std::array<int, 3> Locality::_cache_line_sizes;
+dart_unit_locality_t   * Locality::_unit_loc = nullptr;
+dart_domain_locality_t * Locality::_team_loc = nullptr;
 
 static void print_domain(
   std::ostream                 & ostr,
@@ -189,12 +192,13 @@ static void print_domain(
 
   if (static_cast<int>(domain->scope) <
       static_cast<int>(DART_LOCALITY_SCOPE_NODE)) {
-    ostr << indent << "nodes:   " << domain->num_nodes << '\n';
+//  ostr << indent << "nodes:   " << domain->num_nodes << '\n';
+    ostr << indent << "nodes:   " << domain->num_domains << '\n';
   }
 
   if (static_cast<int>(domain->scope) >=
       static_cast<int>(DART_LOCALITY_SCOPE_NUMA)) {
-    ostr << indent << "NUMA id: " << domain->hwinfo.numa_id  << '\n';
+//  ostr << indent << "NUMA id: " << domain->hwinfo.numa_id  << '\n';
   }
 
   if (domain->num_units > 0) {
@@ -224,12 +228,14 @@ static void print_domain(
                                        << "in team " << uloc->team << ", "
                                        << "global: " << unit_gid   << ")"
                       << '\n';
-      ostr << uindent << "domain:    " << uloc->domain_tag << '\n';
-      ostr << uindent << "host:      " << uloc->host       << '\n';
-      ostr << uindent << "hwinfo:    " << uloc->hwinfo     << '\n';
+//    ostr << uindent << "domain:    " << uloc->domain_tag << '\n';
+      ostr << uindent << "domain:    " << uloc->domain.domain_tag << '\n';
+//    ostr << uindent << "host:      " << uloc->host       << '\n';
+      ostr << uindent << "host:      " << uloc->hwinfo.host       << '\n';
+      ostr << uindent << "hwinfo:    " << uloc->hwinfo            << '\n';
     }
   } else {
-    ostr << indent << "hwinfo:  " << domain->hwinfo << '\n';
+//  ostr << indent << "hwinfo:  " << domain->hwinfo << '\n';
   }
 
   if (domain->num_domains > 0) {
