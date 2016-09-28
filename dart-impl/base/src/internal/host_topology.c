@@ -304,18 +304,15 @@ dart_ret_t dart__base__host_topology__create(
     DART_OK);
   for (int h = 0; h < num_hosts; ++h) {
     /* Get unit ids at local unit's host */
-    if (strncmp(my_uloc->hwinfo.host, hostnames[h], max_host_len) == 0) {
-      dart_node_units_t * node_units = &topo->node_units[h];
-      /* Select first unit id at local host as leader: */
-      dart_unit_t leader_unit_id = node_units->units[0];
-      dart_group_addmember(leader_group, leader_unit_id);
-      DART_LOG_TRACE("dart__base__host_topology__init: "
-                     "leader unit on host %s: %d",
-                     hostnames[h], leader_unit_id);
-      if (my_id == leader_unit_id) {
-        lunit_is_leader = 1;
-      }
-      break;
+    dart_node_units_t * node_units = &topo->node_units[h];
+    /* Select first unit id at local host as leader: */
+    dart_unit_t leader_unit_id = node_units->units[0];
+    dart_group_addmember(leader_group, leader_unit_id);
+    DART_LOG_TRACE("dart__base__host_topology__init: "
+                   "leader unit on host %s: %d",
+                   hostnames[h], leader_unit_id);
+    if (my_id == leader_unit_id) {
+      lunit_is_leader = 1;
     }
   }
 
@@ -349,21 +346,73 @@ dart_ret_t dart__base__host_topology__create(
       malloc(sizeof(dart_module_location_t) * max_node_modules *
              num_leaders);
 
+    /* Number of bytes to receive from each leader unit in allgatherv:  */
+    int * recvcounts         = malloc(num_leaders * sizeof(int));
+    /* Displacement at which to place data received from each leader unit: */
+    int * displs             = malloc(num_leaders * sizeof(int));
+    recvcounts[my_leader_id] = num_local_modules *
+                                 sizeof(dart_module_location_t);
     dart_barrier(leader_team);
+
     DART_ASSERT_RETURNS(
       dart_allgather(
-        local_module_locations,
-        module_locations,
-        sizeof(dart_module_location_t) * num_local_modules,
+        NULL,
+        recvcounts,
+        sizeof(int),
         leader_team),
+      DART_OK);
+    dart_barrier(leader_team);
+
+#if DART_ENABLE_LOGGING
+    for (size_t lu = 0; lu < num_leaders; lu++) {
+      DART_LOG_TRACE("dart__base__host_topology__init: "
+                     "allgather: leader unit %d sent %d",
+                     lu, recvcounts[lu]);
+    }
+#endif
+
+    displs[0] = 0;
+    for (size_t lu = 1; lu < num_leaders; lu++) {
+      displs[lu] = displs[lu-1] + recvcounts[lu];
+    }
+
+    DART_ASSERT_RETURNS(
+      dart_allgatherv(
+        local_module_locations,
+        recvcounts[my_leader_id],
+        module_locations,
+        recvcounts,
+        displs,
+        leader_team),
+      DART_OK);
+#if DART_ENABLE_LOGGING
+    for (size_t lu = 0; lu < num_leaders; lu++) {
+      /* Number of modules received from leader unit lu: */
+      size_t lu_num_modules = recvcounts[lu] / sizeof(dart_module_location_t);
+      for (size_t m = 0; m < lu_num_modules; m++) {
+        int m_displ = displs[lu] / sizeof(dart_module_location_t);
+        dart_unit_t gu;
+        DART_ASSERT_RETURNS(
+          dart_team_unit_l2g(leader_team, lu, &gu),
+          DART_OK);
+        dart_module_location_t * module_loc =
+          &module_locations[m_displ + m];
+        DART_LOG_TRACE("dart__base__host_topology__init: "
+                       "leader unit id: %d (global unit id: %d) "
+                       "module_location { "
+                       "host:%s module:%s scope:%d rel.idx:%d }",
+                       lu, gu, module_loc->host, module_loc->module,
+                       module_loc->pos.scope, module_loc->pos.index);
+      }
+    }
+#endif
+    DART_LOG_TRACE("dart__base__host_topology__init: finalize leader team");
+    DART_ASSERT_RETURNS(
+      dart_team_destroy(leader_team),
       DART_OK);
   }
   dart_barrier(team);
 
-  DART_LOG_TRACE("dart__base__host_topology__init: finalize leader team");
-  DART_ASSERT_RETURNS(
-    dart_team_destroy(leader_team),
-    DART_OK);
 #if 0
   dart_module_location_t * module_locations;
   int                      num_modules;
