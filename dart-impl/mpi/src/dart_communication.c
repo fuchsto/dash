@@ -1432,6 +1432,10 @@ dart_ret_t dart_bcast(
 {
   MPI_Comm comm;
   uint16_t index;
+
+  DART_LOG_TRACE("dart_bcast() root:%d team:%d nbytes:%"PRIu64"",
+                 root, teamid, nbytes);
+
   int result = dart_adapt_teamlist_convert (teamid, &index);
   if (result == -1) {
     return DART_ERR_INVAL;

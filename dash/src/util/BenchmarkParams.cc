@@ -212,6 +212,7 @@ void BenchmarkParams::print_pinning()
       << std::setw(10)     << "NUMA"
       << std::setw(5)      << "CPU"
       << '\n';
+#if TODO_FIXME
   for (size_t unit = 0; unit < dash::size(); ++unit) {
     auto uloc = dash::util::UnitLocality(unit);
     oss << std::left         << "--   "
@@ -223,6 +224,7 @@ void BenchmarkParams::print_pinning()
         << std::setw(5)      << uloc.cpu_id()
         << '\n';
   }
+#endif
   std::cout << oss.str();
 
   print_section_end();

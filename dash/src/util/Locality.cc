@@ -100,59 +100,21 @@ void Locality::init()
                "Locality::init(): dart_unit_locality returned nullptr " <<
                "for unit " << dash::myid());
   }
-
   if (dart_domain_team_locality(
-//      DART_TEAM_ALL, _unit_loc->domain_tag, &_team_loc)
         DART_TEAM_ALL, _unit_loc->domain.domain_tag, &_team_loc)
       != DART_OK) {
     DASH_THROW(dash::exception::RuntimeError,
                "Locality::init(): dart_domain_team_locality failed " <<
-//             "for domain '" << _unit_loc->domain_tag << "'");
                "for domain '" << _unit_loc->domain.domain_tag << "'");
   }
   DASH_LOG_TRACE_VAR("dash::util::Locality::init", _team_loc);
   if (_team_loc == nullptr) {
     DASH_THROW(dash::exception::RuntimeError,
                "Locality::init(): dart_domain_team_locality returned 0 " <<
-//             "for domain '" << _unit_loc->domain_tag << "'");
                "for domain '" << _unit_loc->domain.domain_tag << "'");
   }
-
-#if 0
-  _cache_sizes[0]      = _unit_loc->hwinfo.cache_sizes[0];
-  _cache_sizes[1]      = _unit_loc->hwinfo.cache_sizes[1];
-  _cache_sizes[2]      = _unit_loc->hwinfo.cache_sizes[2];
-  _cache_line_sizes[0] = _unit_loc->hwinfo.cache_line_sizes[0];
-  _cache_line_sizes[1] = _unit_loc->hwinfo.cache_line_sizes[1];
-  _cache_line_sizes[2] = _unit_loc->hwinfo.cache_line_sizes[2];
-
-  if (_cache_line_sizes[0] < 0) {
-    _cache_line_sizes[0] = 64;
-  }
-  if (_cache_line_sizes[1] < 0) {
-    _cache_line_sizes[1] = _cache_line_sizes[0];
-  }
-  if (_cache_line_sizes[2] < 0) {
-    _cache_line_sizes[2] = _cache_line_sizes[1];
-  }
-#endif
   DASH_LOG_DEBUG("dash::util::Locality::init >");
 }
-
-//std::ostream & operator<<(
-//  std::ostream        & os,
-//  const typename Locality::UnitPinning & upi)
-//{
-//  os << "dash::util::Locality::UnitPinning("
-//     << "unit:"         << upi.unit         << " "
-//     << "host:"         << upi.host         << " "
-//     << "domain:"       << upi.domain       << " "
-//     << "numa_id:"      << upi.numa_id      << " "
-//     << "cpu_id:"       << upi.cpu_id       << " "
-//     << "num_cores:"    << upi.num_cores    << " "
-//     << "num_threads:"  << upi.num_threads  << ")";
-//  return os;
-//}
 
 std::ostream & operator<<(
   std::ostream        & os,

@@ -185,12 +185,13 @@ dart_ret_t dart__base__locality__create(
 
 #ifdef DART_ENABLE_LOGGING
   for (int h = 0; h < topo->num_hosts; ++h) {
-    dart_node_units_t * node_units = &topo->node_units[h];
+    dart_host_units_t  * node_units  = &topo->host_units[h];
+    dart_host_domain_t * node_domain = &topo->host_domains[h];
     char * hostname = topo->host_names[h];
     DART_LOG_TRACE("dart__base__locality__create: "
                    "host %s: units:%d level:%d parent:%s", hostname,
-                   node_units->num_units, node_units->level,
-                   node_units->parent);
+                   node_units->num_units,
+                   node_domain->level, node_domain->parent);
     for (int u = 0; u < node_units->num_units; ++u) {
       DART_LOG_TRACE("dart__base__locality__create: %s unit[%d]: %d",
                      hostname, u, node_units->units[u]);

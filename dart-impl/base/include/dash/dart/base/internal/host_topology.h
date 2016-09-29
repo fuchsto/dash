@@ -10,22 +10,29 @@
 
 typedef struct
 {
-  char                host[DART_LOCALITY_HOST_MAX_SIZE];
-  char                parent[DART_LOCALITY_HOST_MAX_SIZE];
-  dart_unit_t       * units;
-  int                 num_units;
-  int                 num_numa;
-  int                 level;
+  char                      host[DART_LOCALITY_HOST_MAX_SIZE];
+  char                      parent[DART_LOCALITY_HOST_MAX_SIZE];
+  dart_locality_scope_pos_t scope_pos;
+  int                       num_numa;
+  int                       level;
 }
-dart_node_units_t;
+dart_host_domain_t;
 
 typedef struct
 {
-  int                 num_nodes;
-  int                 num_hosts;
-  int                 num_host_levels;
-  char **             host_names;
-  dart_node_units_t * node_units;
+  dart_unit_t             * units;
+  int                       num_units;
+}
+dart_host_units_t;
+
+typedef struct
+{
+  int                       num_nodes;
+  int                       num_hosts;
+  int                       num_host_levels;
+  char **                   host_names;
+  dart_host_units_t       * host_units;
+  dart_host_domain_t      * host_domains;
 }
 dart_host_topology_t;
 
