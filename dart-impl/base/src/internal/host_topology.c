@@ -286,8 +286,7 @@ dart_ret_t dart__base__host_topology__update_module_locations(
             strncpy(host_domain->parent, module_loc->host,
                     DART_LOCALITY_HOST_MAX_SIZE);
             host_domain->scope_pos = module_loc->pos;
-            host_domain->level++;
-            topo->num_nodes--;
+            host_domain->level = 1;
             if (topo->num_host_levels < host_domain->level) {
               topo->num_host_levels = host_domain->level;
             }
@@ -323,18 +322,21 @@ dart_ret_t dart__base__host_topology__update_module_locations(
     local_leader_unit_id,
     team);
 
-#if DART_ENABLE_LOGGING
   DART_LOG_TRACE("dart__base__host_topology__init: updated host topology:");
+  topo->num_nodes = num_hosts;
   for (int h = 0; h < num_hosts; ++h) {
     /* Get unit ids at local unit's host */
     dart_host_domain_t * hdom = &topo->host_domains[h];
+    if (hdom->level > 0) {
+      topo->num_nodes--;
+    }
     DART_LOG_TRACE("dart__base__host_topology__init: "
                    "host[%d]: (host:%s parent:%s level:%d, scope_pos:"
                    "(scope:%d rel.idx:%d))",
                    h, hdom->host, hdom->parent, hdom->level,
                    hdom->scope_pos.scope, hdom->scope_pos.index);
   }
-#endif
+
 #if 0
   /* Classify hostnames into categories 'node' and 'module'.
    * Typically, modules have the hostname of their nodes as prefix in their
@@ -559,10 +561,12 @@ dart_ret_t dart__base__host_topology__create(
       unit_mapping, topo),
     DART_OK);
 
+#if 0
   topo->num_hosts  = num_hosts;
 //topo->host_names = (char **)(realloc(hostnames, num_hosts * sizeof(char*)));
   topo->host_names = hostnames;
   DART_ASSERT(topo->host_names != NULL);
+#endif
 
   *host_topology = topo;
   return DART_OK;
@@ -610,8 +614,8 @@ dart_ret_t dart__base__host_topology__node(
     }
   }
   DART_LOG_ERROR("dart__base__host_topology__node: "
-                 "failed to load node at index:%d, num.hosts:%d",
-                 node_index, topo->num_hosts);
+                 "failed to load node at index:%d, num.hosts:%d num.nodes:%d",
+                 node_index, topo->num_hosts, topo->num_nodes);
   return DART_ERR_NOTFOUND;
 }
 
