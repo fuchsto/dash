@@ -27,7 +27,7 @@ template<
 class GlobHeapMem;
 
 /**
- * Iterator on global buckets. Represents global pointer type.
+ * Specialization of \c dash::GlobPtr for dynamic global memory spaces.
  */
 template <typename ElementType, class AllocatorType>
 class GlobPtr<

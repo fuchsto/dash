@@ -136,7 +136,7 @@ template<typename T, class MemSpaceT> class GlobPtr;
  *     gdmem.grow(512);
  *   }
  *   if (dash::myid() == 1) {
- *     // Decrease capacity of local memory space by 128 units.
+ *     // Decrease capacity of local memory space by 128 elements.
  *     // This is a local operation. New size of logical memory space is
  *     // effective for the local unit immediately but memory is not
  *     // physically freed yet and is still accessible by other units.
@@ -211,11 +211,11 @@ public:
   typedef AllocatorType                                      allocator_type;
   typedef typename std::decay<ElementType>::type                 value_type;
   
-  typedef typename AllocatorType::size_type                       size_type;
-  typedef typename AllocatorType::difference_type           difference_type;
-  typedef typename AllocatorType::difference_type                index_type;
+  typedef typename allocator_type::size_type                      size_type;
+  typedef typename allocator_type::difference_type          difference_type;
+  typedef typename allocator_type::difference_type               index_type;
 
-  typedef typename AllocatorType::pointer                       raw_pointer;
+  typedef typename allocator_type::pointer                      raw_pointer;
 
   typedef GlobHeapLocalPtr<value_type, index_type>            local_pointer;
   typedef GlobHeapLocalPtr<value_type, index_type>      const_local_pointer;

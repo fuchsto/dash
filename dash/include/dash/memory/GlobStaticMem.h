@@ -80,7 +80,7 @@ template<
   typename ElementType,
   /// Type implementing the DASH allocator concept used to allocate and
   /// deallocate physical memory
-  class    AllocatorType =
+  class    SubAllocatorType =
              dash::allocator::SymmetricAllocator<ElementType> >
 class GlobStaticMem
 {
@@ -89,23 +89,23 @@ private:
     self_t;
 
 public:
-  typedef AllocatorType                                    allocator_type;
+  typedef SubAllocatorType                                  sub_allocator;
   typedef typename std::decay<ElementType>::type               value_type;
 
-  typedef typename allocator_type::size_type                    size_type;
-  typedef typename allocator_type::difference_type        difference_type;
-  typedef typename allocator_type::difference_type             index_type;
+  typedef typename dash::default_size_t                         size_type;
+  typedef typename dash::default_index_t                  difference_type;
+  typedef typename dash::default_index_t                       index_type;
 
   typedef GlobPtr<      value_type, self_t>                       pointer;
   typedef GlobPtr<const value_type, self_t>                 const_pointer;
   typedef GlobPtr<      void,       self_t>                  void_pointer;
   typedef GlobPtr<const void,       self_t>            const_void_pointer;
 
-  typedef       value_type *                                local_pointer;
-  typedef const value_type *                          const_local_pointer;
+  typedef typename sub_allocator::pointer                   local_pointer;
+  typedef typename sub_allocator::const_pointer       const_local_pointer;
 
 private:
-  allocator_type          _allocator;
+  sub_allocator           _allocator;
   dart_gptr_t             _begptr     = DART_GPTR_NULL;
   dash::Team            * _team       = nullptr;
   dart_team_t             _teamid;
@@ -114,6 +114,8 @@ private:
   size_type               _nlelem     = 0;
   local_pointer           _lbegin     = nullptr;
   local_pointer           _lend       = nullptr;
+
+  std::vector<pointer>    _allocated;
 
 public:
   /**

@@ -33,7 +33,10 @@ namespace allocator {
  *
  * \concept{DashAllocatorConcept}
  */
-template<typename ElementType>
+template<
+  typename ElementType
+  class    MemSpaceType = dash::GlobStaticMem<
+                            typename std::decay<ElementType>::type > >
 class SymmetricAllocator
 {
   template <class T, class U>
@@ -57,15 +60,14 @@ public:
 
 /// Type definitions required for dash::allocator concept:
 public:
-  typedef dash::gptrdiff_t        difference_type;
-  typedef dart_gptr_t                     pointer;
-  typedef dart_gptr_t                void_pointer;
-  typedef dart_gptr_t               const_pointer;
-  typedef dart_gptr_t          const_void_pointer;
+  typedef dash::gptrdiff_t                              difference_type;
+  typedef typename MemSpaceType::pointer                        pointer;
+  typedef typename MemSpaceType::void_pointer              void_pointer;
+  typedef typename MemSpaceType::const_pointer            const_pointer;
+  typedef typename MemSpaceType::const_void_pointer  const_void_pointer;
 
 private:
   dart_team_t          _team_id;
-  std::vector<pointer> _allocated;
 
 public:
   /**
@@ -188,16 +190,14 @@ public:
   {
     DASH_LOG_DEBUG("SymmetricAllocator.allocate(nlocal)",
                    "number of local values:", num_local_elem);
-    pointer gptr = DART_GPTR_NULL;
+    dart_gptr_t gptr = DART_GPTR_NULL;
     dart_storage_t ds = dart_storage<ElementType>(num_local_elem);
     if (dart_team_memalloc_aligned(_team_id, ds.nelem, ds.dtype, &gptr)
-        == DART_OK) {
-      _allocated.push_back(gptr);
-    } else {
+        != DART_OK) {
       gptr = DART_GPTR_NULL;
     }
     DASH_LOG_DEBUG_VAR("SymmetricAllocator.allocate >", gptr);
-    return gptr;
+    return pointer(gptr);
   }
 
   /**

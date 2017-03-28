@@ -630,7 +630,8 @@ template<
   /// Pattern type used to distribute array elements among units.
   /// Default is \c dash::BlockPattern<1, ROW_MAJOR> as it supports all
   /// distribution types (BLOCKED, TILE, BLOCKCYCLIC, CYCLIC).
-  class    PatternType  = BlockPattern<1, ROW_MAJOR, IndexType>
+  class    PatternType  = BlockPattern<1, ROW_MAJOR, IndexType>,
+  class    AllocType    = SymmetricAllocator<ElementType>
 >
 class Array
 {
@@ -660,7 +661,7 @@ public:
   typedef GlobIter<      value_type, PatternType>                    pointer;
   typedef GlobIter<const value_type, PatternType>              const_pointer;
 
-  typedef dash::GlobStaticMem<value_type>                            glob_mem_type;
+  typedef dash::GlobStaticMem<value_type>                      glob_mem_type;
 
 public:
   template<
