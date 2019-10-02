@@ -285,7 +285,7 @@ message(INFO "PLASMA support:           (ENABLE_PLASMA)                  "
         ${ENABLE_PLASMA})
 message(INFO "HDF5 support:             (ENABLE_HDF5)                    "
         ${ENABLE_HDF5})
-message(INFO "Memkind support:          (ENABLE_MEMKIND)                    "
+message(INFO "Memkind support:          (ENABLE_MEMKIND)                 "
         ${ENABLE_MEMKIND})
 message(INFO "Enabled DART backends:    (DART_IMPLEMENTATIONS)           "
         ${DART_IMPLEMENTATIONS})

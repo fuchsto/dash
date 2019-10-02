@@ -1255,6 +1255,11 @@ public:
     return block_vs;
   }
 
+  constexpr const MemoryLayout_t & memory_layout() const
+  {
+    return _memory_layout;
+  }
+
   /**
    * Cartesian arrangement of pattern blocks.
    */
